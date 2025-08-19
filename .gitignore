@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+env/
+venv/
+*.sqlite3
+
+# Docker
+db/
+*.log
+
+# VSCode / IDEs
+.vscode/
+.idea/
+
+# Outros
+.DS_Store
