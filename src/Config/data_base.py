@@ -1,11 +1,11 @@
-from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from src.Infrastructure.seller import Base
 
-db = SQLAlchemy()
+DATABASE_URL = "sqlite:///./mercado.db"  # ou PostgreSQL/MySQL se preferir
 
-def init_db(app):
-    """
-    Inicializa a base de dados com o app Flask e o SQLAlchemy.
-    """
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://root:root@mysql57:3306/estoque_mercado'
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    db.init_app(app)
+engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# Criar as tabelas
+Base.metadata.create_all(bind=engine)
