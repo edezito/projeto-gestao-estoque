@@ -1,17 +1,21 @@
+version: '3.8'
+
 services:
   db:
     image: mysql:8.0.29
     restart: unless-stopped
     container_name: db
     ports:
-      - "127.0.0.1:3306:3306"
+      - "3307:3306"
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: estoque_mercado
       MYSQL_USER: user
       MYSQL_PASSWORD: user
+      MYSQL_ROOT_HOST: '%'
     volumes:
       - mysql_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
 
   web:
     build:
@@ -26,7 +30,11 @@ services:
     environment:
       FLASK_APP: run.py
       FLASK_ENV: development
-      DATABASE_URL: mysql+pymysql://user:user@db:3306/estoque_mercado
+      DATABASE_URL: mysql+mysqlconnector://user:user@db:3306/estoque_mercado
+      TWILIO_SID: ${TWILIO_SID}
+      TWILIO_TOKEN: ${TWILIO_TOKEN}
+      TWILIO_PHONE: ${TWILIO_PHONE}
+    restart: unless-stopped
 
 volumes:
   mysql_data:

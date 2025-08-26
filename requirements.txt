@@ -1,10 +1,17 @@
-Flask==2.1.0
-flask_sqlalchemy
-mysql-connector-python
-werkzeug==2.0.2
-sqlalchemy==1.4.49
-fastapi
-uvicorn
-sqlalchemy
-passlib[bcrypt]
-twilio
+# Web Framework
+Flask==2.3.2
+fastapi==0.101.1
+uvicorn==0.23.2
+gunicorn==21.2.0
+
+# Database
+flask_sqlalchemy==3.0.3
+sqlalchemy==2.0.20
+mysql-connector-python==8.1.0
+
+# Segurança
+passlib[bcrypt]==1.7.4
+werkzeug==2.3.7
+
+# Twilio
+twilio==9.7.1
