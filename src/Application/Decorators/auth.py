@@ -1,3 +1,4 @@
+#estou mantendo esse arquivo para usar se der erro na tentativa de arrumar login.
 import jwt
 import os
 from functools import wraps
