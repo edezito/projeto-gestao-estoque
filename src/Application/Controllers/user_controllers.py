@@ -1,19 +1,15 @@
-# Arquivo: src/Application/Controllers/user_controller.py
-
 from flask import request, jsonify, Blueprint
-from src.Service.user_service import UserService # Corrigido: o caminho correto provavelmente não tem 'Application'
+from src.Application.Service.user_service import UserService
+from src.auth import AuthService, token_required
 import jwt
 import datetime
 import os
 
-# --- PASSO 4 Início ---
-# 1. IMPORTAR O DECORATOR
-from src.Application.Decorators.auth import token_required
-# --- PASSO 4 Fim ---
 
 class UserController:
     def __init__(self):
         self.user_service = UserService()
+        self.auth_service = AuthService()
         self.blueprint = Blueprint('user', __name__)
         self._register_routes()
 
@@ -21,11 +17,7 @@ class UserController:
         self.blueprint.add_url_rule('/register', 'register', self.register_user, methods=['POST'])
         self.blueprint.add_url_rule('/activate', 'activate', self.activate_user, methods=['POST'])
         self.blueprint.add_url_rule('/login', 'login', self.login, methods=['POST'])
-        
-        # --- PASSO 4 Início ---
-        # 2. REGISTRAR A NOVA ROTA PROTEGIDA
         self.blueprint.add_url_rule('/me', 'get_meus_dados', self.get_meus_dados, methods=['GET'])
-        # --- PASSO 4 Fim ---
 
     def register_user(self):
         try:
@@ -66,42 +58,51 @@ class UserController:
 
     def login(self):
         try:
-            data = request.get_json() or {}
-            identifier = data.get("identifier")
-            password = data.get("senha")
+            data = request.get_json(silent=True) or {}
+            login_identifier = data.get("login")
+            senha = data.get("senha")
 
-            if not identifier or not password:
-                return jsonify({"erro": "Identificador (CNPJ/e-mail) e senha são obrigatórios"}), 400
+            if not login_identifier or not senha:
+                return jsonify({"erro": "Login e senha são obrigatórios"}), 400
 
-            authenticated_user = self.user_service.authenticate_user(
-                login_identifier=identifier,
-                senha=password
-            )
+            # Autentica usuário usando o UserService
+            user = self.user_service.authenticate_user(login_identifier, senha)
+            if not user:
+                return jsonify({"erro": "Credenciais inválidas ou conta inativa"}), 401
 
-            if not authenticated_user:
-                return jsonify({"erro": "Credenciais inválidas ou usuário inativo."}), 401
+            # Geração de token JWT - agora funciona com UserDomain
+            try:
+                token = self.auth_service._generate_jwt(user)
+            except ValueError as e:
+                return jsonify({"erro": str(e)}), 500
+            except Exception as jwt_err:
+                print(f"Erro ao gerar JWT: {jwt_err}")
+                return jsonify({"erro": "Falha ao gerar token de autenticação."}), 500
 
-            payload = {
-                'id': authenticated_user.id,
-                'nome': authenticated_user.nome,
-                'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)
-            }
-            secret_key = os.getenv('JWT_SECRET')
-            token = jwt.encode(payload, secret_key, algorithm='HS256')
+            return jsonify({
+                "mensagem": "Login bem-sucedido!",
+                "token": token
+            }), 200
 
-            return jsonify({"mensagem": "Login bem-sucedido!", "token": token}), 200
         except Exception as e:
             print(f"Erro interno no login: {e}")
             return jsonify({"erro": "Erro interno ao tentar fazer login."}), 500
 
-    # 3. CRIAR O MÉTODO PROTEGIDO PELO DECORATOR
+
     @token_required
     def get_meus_dados(self, current_user):
-        """
-        Endpoint protegido. Só pode ser acessado com um token JWT válido.
-        O decorator injeta os dados do token no parâmetro 'current_user'.
-        """
-        return jsonify({
-            "mensagem": f"Acesso à rota protegida concedido com sucesso!",
-            "dados_do_usuario_no_token": current_user
-        }), 200
+        try:
+            return jsonify({
+                "mensagem": "Acesso à rota protegida concedido com sucesso!",
+                "usuario": {
+                    "id": current_user.id,
+                    "nome": current_user.nome,
+                    "email": current_user.email,
+                    "status": current_user.status,
+                    "cnpj": current_user.cnpj,
+                    "celular": current_user.celular
+                }
+            }), 200
+        except Exception as e:
+            print(f"Erro em get_meus_dados: {e}")
+            return jsonify({"erro": "Erro interno ao buscar dados do usuário"}), 500
