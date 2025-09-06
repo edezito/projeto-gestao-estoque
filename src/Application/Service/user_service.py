@@ -5,12 +5,13 @@ from src.Infrastructure.Model.user import UserModel
 from src.Infrastructure.External.twilio_service import TwilioService
 from src.Config import db
 
+
 class UserService:
     def __init__(self):
         self.twilio_service = TwilioService()
 
     def create_user(self, nome: str, cnpj: str, email: str, celular: str, senha: str) -> UserDomain:
-        #ve se já existe usuário com CNPJ ou e-mail
+        # Verifica se já existe usuário com CNPJ ou e-mail
         existing_user = UserModel.query.filter(
             (UserModel.cnpj == cnpj) | (UserModel.email == email)
         ).first()
@@ -18,11 +19,11 @@ class UserService:
         if existing_user:
             raise ValueError("CNPJ ou e-mail já cadastrado")
 
-        #código de ativação e o hash da senha
+        # Gera código de ativação e o hash da senha
         codigo = f"{random.randint(1000, 9999)}"
         senha_hash = bcrypt.hash(senha)
 
-        #model pra persitencia
+        # Cria o modelo para persistência
         user_model = UserModel(
             nome=nome,
             cnpj=cnpj,
@@ -33,14 +34,14 @@ class UserService:
             codigo_ativacao=codigo,
         )
 
-        #persiste no bd
+        # Persiste no banco
         db.session.add(user_model)
         db.session.commit()
 
-        #código wpp
+        # Envia código via WhatsApp
         self.twilio_service.send_whatsapp_code(user_model.celular, codigo)
 
-        #cria e retorna dominio
+        # Cria e retorna domínio
         return UserDomain(
             id=user_model.id,
             nome=user_model.nome,
@@ -62,3 +63,25 @@ class UserService:
             return True
         
         return False
+
+    def authenticate_user(self, login_identifier: str, senha: str) -> UserDomain | None:
+        """Autentica usuário pelo CNPJ ou e-mail e senha"""
+        user_model = UserModel.query.filter(
+            (UserModel.cnpj == login_identifier) | (UserModel.email == login_identifier)
+        ).first()
+
+        if not user_model or user_model.status != "Ativo":
+            return None
+
+        if bcrypt.verify(senha, user_model.senha):
+            return UserDomain(
+                id=user_model.id,
+                nome=user_model.nome,
+                cnpj=user_model.cnpj,
+                email=user_model.email,
+                celular=user_model.celular,
+                senha=user_model.senha,
+                status=user_model.status
+            )
+        
+        return None
