@@ -32,6 +32,7 @@ services:
       TWILIO_SID: ${TWILIO_SID}
       TWILIO_TOKEN: ${TWILIO_TOKEN}
       TWILIO_PHONE: ${TWILIO_PHONE}
+      SENHA_JWT: ${SENHA_JWT}
     restart: unless-stopped
 
 volumes:

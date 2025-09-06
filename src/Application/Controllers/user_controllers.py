@@ -1,6 +1,6 @@
 from flask import request, jsonify, Blueprint
 from src.Application.Service.user_service import UserService
-from src.Application.Service.auth_service import AuthService
+from src.auth import AuthService, token_required
 
 class UserController:
     def __init__(self):
@@ -75,20 +75,54 @@ class UserController:
         
     def login(self):
         try:
-            data = request.get_json() or {}
-            email = data.get("email")
+            data = request.get_json(silent=True) or {}
+            login_identifier = data.get("login")
             senha = data.get("senha")
-            if not email or not senha:
-                return jsonify({"erro": "Email e senha são obrigatórios"}), 400
 
-            token, error = self.auth_service.authenticate(email, senha)
-            if error:
-                return jsonify({"erro": error}), 401
+            if not login_identifier or not senha:
+                return jsonify({"erro": "Login e senha são obrigatórios"}), 400
 
-            return jsonify({"token": token}), 200
+            # Autentica usuário usando o UserService
+            user = self.user_service.authenticate_user(login_identifier, senha)
+            if not user:
+                return jsonify({"erro": "Credenciais inválidas ou conta inativa"}), 401
+
+            # Geração de token JWT - agora funciona com UserDomain
+            try:
+                token = self.auth_service._generate_jwt(user)
+            except ValueError as e:
+                return jsonify({"erro": str(e)}), 500
+            except Exception as jwt_err:
+                print(f"Erro ao gerar JWT: {jwt_err}")
+                return jsonify({"erro": "Falha ao gerar token de autenticação."}), 500
+
+            return jsonify({
+                "mensagem": "Login bem-sucedido!",
+                "token": token
+            }), 200
+
         except Exception as e:
-            print(f"Erro interno: {e}")
-            return jsonify({"erro": "Erro interno ao autenticar."}), 500
+            print(f"Erro interno no login: {e}")
+            return jsonify({"erro": "Erro interno ao tentar fazer login."}), 500
+
+
+    @token_required
+    def get_meus_dados(self, current_user):
+        try:
+            return jsonify({
+                "mensagem": "Acesso à rota protegida concedido com sucesso!",
+                "usuario": {
+                    "id": current_user.id,
+                    "nome": current_user.nome,
+                    "email": current_user.email,
+                    "status": current_user.status,
+                    "cnpj": current_user.cnpj,
+                    "celular": current_user.celular
+                }
+            }), 200
+        except Exception as e:
+            print(f"Erro em get_meus_dados: {e}")
+            return jsonify({"erro": "Erro interno ao buscar dados do usuário"}), 500
         
     @AuthService.token_required
     def get_profile(self, current_user):  #fznd exemplo de rota protegida
