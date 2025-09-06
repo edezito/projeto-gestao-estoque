@@ -1,10 +1,6 @@
 from flask import request, jsonify, Blueprint
 from src.Application.Service.user_service import UserService
 from src.auth import AuthService, token_required
-import jwt
-import datetime
-import os
-
 
 class UserController:
     def __init__(self):
@@ -17,22 +13,34 @@ class UserController:
         self.blueprint.add_url_rule('/register', 'register', self.register_user, methods=['POST'])
         self.blueprint.add_url_rule('/activate', 'activate', self.activate_user, methods=['POST'])
         self.blueprint.add_url_rule('/login', 'login', self.login, methods=['POST'])
-        self.blueprint.add_url_rule('/me', 'get_meus_dados', self.get_meus_dados, methods=['GET'])
+        self.blueprint.add_url_rule('/me', 'me', self.get_profile, methods=['GET']) #Rota protegida
 
     def register_user(self):
         try:
             data = request.get_json() or {}
+            #validando os campos obrigatórios
             required_fields = ["nome", "cnpj", "email", "celular", "senha"]
             missing_fields = [field for field in required_fields if not data.get(field)]
             
             if missing_fields:
-                return jsonify({"erro": f"Campos obrigatórios faltando: {', '.join(missing_fields)}"}), 400
+                return jsonify({
+                    "erro": f"Campos obrigatórios faltando: {', '.join(missing_fields)}"
+                }), 400
 
+            # Cria o usuário
             user = self.user_service.create_user(
-                nome=data["nome"], cnpj=data["cnpj"], email=data["email"],
-                celular=data["celular"], senha=data["senha"]
+                nome=data["nome"],
+                cnpj=data["cnpj"],
+                email=data["email"],
+                celular=data["celular"],
+                senha=data["senha"]
             )
-            return jsonify({"mensagem": "Cadastro realizado. Código enviado via WhatsApp.", "user_id": user.id}), 201
+
+            return jsonify({
+                "mensagem": "Cadastro realizado. Código enviado via WhatsApp.",
+                "user_id": user.id
+            }), 201
+
         except ValueError as e:
             return jsonify({"erro": str(e)}), 409
         except Exception as e:
@@ -44,18 +52,27 @@ class UserController:
             data = request.get_json() or {}
             
             if not data.get("cnpj") or not data.get("codigo"):
-                return jsonify({"erro": "CNPJ e código são obrigatórios"}), 400
+                return jsonify({
+                    "erro": "CNPJ e código são obrigatórios"
+                }), 400
 
             success = self.user_service.activate_user(data["cnpj"], data["codigo"])
             
             if success:
-                return jsonify({"mensagem": "Conta ativada com sucesso."}), 200
+                return jsonify({
+                    "mensagem": "Conta ativada com sucesso."
+                }), 200
             else:
-                return jsonify({"erro": "Código inválido ou CNPJ não encontrado."}), 400
+                return jsonify({
+                    "erro": "Código inválido ou CNPJ não encontrado."
+                }), 400
+
         except Exception as e:
             print(f"Erro interno: {e}")
-            return jsonify({"erro": "Erro interno ao ativar a conta."}), 500
-
+            return jsonify({
+                "erro": "Erro interno ao ativar a conta."
+            }), 500
+        
     def login(self):
         try:
             data = request.get_json(silent=True) or {}
@@ -106,3 +123,16 @@ class UserController:
         except Exception as e:
             print(f"Erro em get_meus_dados: {e}")
             return jsonify({"erro": "Erro interno ao buscar dados do usuário"}), 500
+        
+    @AuthService.token_required
+    def get_profile(self, current_user):  #fznd exemplo de rota protegida
+        try:
+            return jsonify({
+                "id": current_user.id,
+                "nome": current_user.nome,
+                "email": current_user.email,
+                "status": current_user.status
+            }), 200
+        except Exception as e:
+            print(f"Erro interno: {e}")
+            return jsonify({"erro": "Erro ao buscar dados do perfil."}), 500

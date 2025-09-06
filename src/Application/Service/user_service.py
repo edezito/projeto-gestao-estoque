@@ -5,11 +5,13 @@ from src.Infrastructure.Model.user import UserModel
 from src.Infrastructure.External.twilio_service import TwilioService
 from src.Config import db
 
+
 class UserService:
     def __init__(self):
         self.twilio_service = TwilioService()
 
     def create_user(self, nome: str, cnpj: str, email: str, celular: str, senha: str) -> UserDomain:
+        # Verifica se já existe usuário com CNPJ ou e-mail
         existing_user = UserModel.query.filter(
             (UserModel.cnpj == cnpj) | (UserModel.email == email)
         ).first()
@@ -17,7 +19,7 @@ class UserService:
         if existing_user:
             raise ValueError("CNPJ ou e-mail já cadastrado")
 
-        # Gera o código de ativação e o hash da senha
+        # Gera código de ativação e o hash da senha
         codigo = f"{random.randint(1000, 9999)}"
         senha_hash = bcrypt.hash(senha)
 
@@ -39,7 +41,7 @@ class UserService:
         # Envia código via WhatsApp
         self.twilio_service.send_whatsapp_code(user_model.celular, codigo)
 
-        # Cria e retorna o domínio
+        # Cria e retorna domínio
         return UserDomain(
             id=user_model.id,
             nome=user_model.nome,
@@ -62,8 +64,8 @@ class UserService:
         
         return False
 
-    # MÉTODO ADICIONADO PARA O PASSO 1
     def authenticate_user(self, login_identifier: str, senha: str) -> UserDomain | None:
+        """Autentica usuário pelo CNPJ ou e-mail e senha"""
         user_model = UserModel.query.filter(
             (UserModel.cnpj == login_identifier) | (UserModel.email == login_identifier)
         ).first()
