@@ -52,6 +52,7 @@ class UserService:
             cnpj=user_model.cnpj,
             email=user_model.email,
             celular=user_model.celular,
+            senha=user_model.senha,
             status=user_model.status
         )
 
@@ -81,6 +82,7 @@ class UserService:
                 cnpj=user_model.cnpj,
                 email=user_model.email,
                 celular=user_model.celular,
+                senha=user_model.senha,
                 status=user_model.status
             )
         
