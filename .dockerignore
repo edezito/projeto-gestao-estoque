@@ -1,0 +1,27 @@
+Git
+.git
+.gitignore
+
+Docker
+Dockerfile
+docker-compose.yml
+
+Python virtual environment (MUITO IMPORTANTE)
+venv/
+.venv/
+env/
+.env
+
+Python caches
+pycache/
+*.pyc
+*.pyo
+*.pyd
+
+IDE / Editor folders
+.vscode/
+.idea/
+
+OS files
+.DS_Store
+Thumbs.db
