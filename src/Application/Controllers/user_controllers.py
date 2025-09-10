@@ -13,7 +13,11 @@ class UserController:
         self.blueprint.add_url_rule('/register', 'register', self.register_user, methods=['POST'])
         self.blueprint.add_url_rule('/activate', 'activate', self.activate_user, methods=['POST'])
         self.blueprint.add_url_rule('/login', 'login', self.login, methods=['POST'])
-        self.blueprint.add_url_rule('/me', 'me', self.get_profile, methods=['GET']) #Rota protegida
+        self.blueprint.add_url_rule('/me', 'me', self.get_profile, methods=['GET'])#rota protegida
+        #novas rotas pro CRUD
+        self.blueprint.add_url_rule('/<int:user_id>', 'get_user', self.get_user_by_id, methods=['GET'])
+        self.blueprint.add_url_rule('/<int:user_id>', 'update_user', self.update_user, methods=['PUT'])
+        self.blueprint.add_url_rule('/<int:user_id>', 'delete_user', self.delete_user, methods=['DELETE'])
 
     def register_user(self):
         try:
@@ -27,7 +31,6 @@ class UserController:
                     "erro": f"Campos obrigatórios faltando: {', '.join(missing_fields)}"
                 }), 400
 
-            # Cria o usuário
             user = self.user_service.create_user(
                 nome=data["nome"],
                 cnpj=data["cnpj"],
@@ -82,12 +85,12 @@ class UserController:
             if not login_identifier or not senha:
                 return jsonify({"erro": "Login e senha são obrigatórios"}), 400
 
-            # Autentica usuário usando o UserService
+            #autenticação usuário usando o UserService
             user = self.user_service.authenticate_user(login_identifier, senha)
             if not user:
                 return jsonify({"erro": "Credenciais inválidas ou conta inativa"}), 401
 
-            # Geração de token JWT - agora funciona com UserDomain
+            #token JWT - agr funciona com UserDomain
             try:
                 token = self.auth_service._generate_jwt(user)
             except ValueError as e:
@@ -125,7 +128,7 @@ class UserController:
             return jsonify({"erro": "Erro interno ao buscar dados do usuário"}), 500
         
     @AuthService.token_required
-    def get_profile(self, current_user):  #fznd exemplo de rota protegida
+    def get_profile(self, current_user):  #fznd esboço de rota protegida
         try:
             return jsonify({
                 "id": current_user.id,
@@ -136,3 +139,37 @@ class UserController:
         except Exception as e:
             print(f"Erro interno: {e}")
             return jsonify({"erro": "Erro ao buscar dados do perfil."}), 500
+        
+    @token_required
+    def get_user_by_id(self, user_id):
+        try:
+            user = self.user_service.get_user_by_id(user_id)
+            if not user:
+                return jsonify({"erro": "Usuário não encontrado"}), 404
+            return jsonify(user.__dict__), 200
+        except Exception as e:
+            print(f"Erro em get_user_by_id: {e}")
+            return jsonify({"erro": "Erro interno ao buscar usuário"}), 500
+
+    @token_required
+    def update_user(self, user_id):
+        try:
+            dados = request.json or {}
+            user = self.user_service.update_user(user_id, dados)
+            if not user:
+                return jsonify({"erro": "Usuário não encontrado"}), 404
+            return jsonify(user.__dict__), 200
+        except Exception as e:
+            print(f"Erro em update_user: {e}")
+            return jsonify({"erro": "Erro interno ao atualizar usuário"}), 500
+
+    @token_required
+    def delete_user(self, user_id):
+        try:
+            sucesso = self.user_service.delete_user(user_id)
+            if not sucesso:
+                return jsonify({"erro": "Usuário não encontrado"}), 404
+            return jsonify({"mensagem": "Usuário deletado com sucesso"}), 200
+        except Exception as e:
+            print(f"Erro em delete_user: {e}")
+            return jsonify({"erro": "Erro interno ao deletar usuário"}), 500

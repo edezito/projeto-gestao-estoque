@@ -11,7 +11,7 @@ class UserService:
         self.twilio_service = TwilioService()
 
     def create_user(self, nome: str, cnpj: str, email: str, celular: str, senha: str) -> UserDomain:
-        # Verifica se já existe usuário com CNPJ ou e-mail
+        #ve se já existe usuário com CNPJ ou e-mail
         existing_user = UserModel.query.filter(
             (UserModel.cnpj == cnpj) | (UserModel.email == email)
         ).first()
@@ -19,11 +19,10 @@ class UserService:
         if existing_user:
             raise ValueError("CNPJ ou e-mail já cadastrado")
 
-        # Gera código de ativação e o hash da senha
+        #código de ativação e o hash da senha
         codigo = f"{random.randint(1000, 9999)}"
         senha_hash = bcrypt.hash(senha)
 
-        # Cria o modelo para persistência
         user_model = UserModel(
             nome=nome,
             cnpj=cnpj,
@@ -34,14 +33,12 @@ class UserService:
             codigo_ativacao=codigo,
         )
 
-        # Persiste no banco
         db.session.add(user_model)
         db.session.commit()
 
-        # Envia código via WhatsApp
+        #código pro wpp
         self.twilio_service.send_whatsapp_code(user_model.celular, codigo)
 
-        # Cria e retorna domínio
         return UserDomain(
             id=user_model.id,
             nome=user_model.nome,
@@ -85,3 +82,49 @@ class UserService:
             )
         
         return None
+    
+    def get_user_by_id(self, user_id: int) -> UserDomain | None:
+        user = UserModel.query.get(user_id)
+        if not user:
+            return None
+        return UserDomain(
+            id=user.id,
+            nome=user.nome,
+            cnpj=user.cnpj,
+            email=user.email,
+            celular=user.celular,
+            senha=user.senha,
+            status=user.status
+        )
+
+    def update_user(self, user_id: int, dados: dict) -> UserDomain | None:
+        user = UserModel.query.get(user_id)
+        if not user:
+            return None
+
+        #atualiza só os campos recebidos
+        user.nome = dados.get("nome", user.nome)
+        user.email = dados.get("email", user.email)
+        user.celular = dados.get("celular", user.celular)
+
+        db.session.commit()
+
+        return UserDomain(
+            id=user.id,
+            nome=user.nome,
+            cnpj=user.cnpj,
+            email=user.email,
+            celular=user.celular,
+            senha=user.senha,
+            status=user.status
+        )
+
+    def delete_user(self, user_id: int) -> bool:
+        user = UserModel.query.get(user_id)
+        if not user:
+            return False
+
+        db.session.delete(user)
+        db.session.commit()
+        return True
+
