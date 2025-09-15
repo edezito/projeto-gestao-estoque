@@ -9,7 +9,7 @@ class UserService:
     def __init__(self):
         self.twilio_service = TwilioService()
 
-    def create_user(self, nome: str, cnpj: str, email: str, celular: str, senha: str) -> UserDomain:
+    def create_user(self, nome: str, cnpj: str, email: str, celular: str, senha: str) -> UserDomain: #centralizar paramentros
         # Verifica duplicidade
         existing_user = UserModel.query.filter(
             (UserModel.cnpj == cnpj) | (UserModel.email == email)

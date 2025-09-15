@@ -18,7 +18,7 @@ class UserController:
         # Novas rotas pro CRUD
         self.blueprint.add_url_rule('/<int:user_id>', 'get_user', self.get_user_by_id, methods=['GET'])
         self.blueprint.add_url_rule('/<int:user_id>', 'update_user', self.update_user, methods=['PUT'])
-        self.blueprint.add_url_rule('/<int:user_id>', 'delete_user', self.delete_user, methods=['DELETE'])
+        self.blueprint.add_url_rule('/<int:user_id>', 'delete_user', self.delete_user, methods=['DELETE']) #rota para inativar e nao deletar
 
     def register_user(self):
         try:
@@ -29,6 +29,7 @@ class UserController:
             if missing_fields:
                 return jsonify({"erro": f"Campos obrigatórios faltando: {', '.join(missing_fields)}"}), 400
 
+            
             user = self.user_service.create_user(
                 nome=data["nome"],
                 cnpj=data["cnpj"],
