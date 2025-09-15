@@ -13,8 +13,9 @@ class UserController:
         self.blueprint.add_url_rule('/register', 'register', self.register_user, methods=['POST'])
         self.blueprint.add_url_rule('/activate', 'activate', self.activate_user, methods=['POST'])
         self.blueprint.add_url_rule('/login', 'login', self.login, methods=['POST'])
+        # Mantendo rota protegida
         self.blueprint.add_url_rule('/me', 'me', self.get_meus_dados, methods=['GET'])
-        #novas rotas pro CRUD
+        # Novas rotas pro CRUD
         self.blueprint.add_url_rule('/<int:user_id>', 'get_user', self.get_user_by_id, methods=['GET'])
         self.blueprint.add_url_rule('/<int:user_id>', 'update_user', self.update_user, methods=['PUT'])
         self.blueprint.add_url_rule('/<int:user_id>', 'delete_user', self.delete_user, methods=['DELETE'])
@@ -22,14 +23,11 @@ class UserController:
     def register_user(self):
         try:
             data = request.get_json() or {}
-            #validando os campos obrigatórios
             required_fields = ["nome", "cnpj", "email", "celular", "senha"]
             missing_fields = [field for field in required_fields if not data.get(field)]
             
             if missing_fields:
-                return jsonify({
-                    "erro": f"Campos obrigatórios faltando: {', '.join(missing_fields)}"
-                }), 400
+                return jsonify({"erro": f"Campos obrigatórios faltando: {', '.join(missing_fields)}"}), 400
 
             user = self.user_service.create_user(
                 nome=data["nome"],
@@ -41,13 +39,14 @@ class UserController:
 
             return jsonify({
                 "mensagem": "Cadastro realizado. Código enviado via WhatsApp.",
-                "user_id": user.id
+                "user_id": getattr(user, "id", None)
             }), 201
 
         except ValueError as e:
             return jsonify({"erro": str(e)}), 409
         except Exception as e:
-            print(f"Erro interno: {e}")
+            import traceback
+            traceback.print_exc()
             return jsonify({"erro": "Erro interno ao cadastrar usuário."}), 500
 
     def activate_user(self):
@@ -55,27 +54,19 @@ class UserController:
             data = request.get_json() or {}
             
             if not data.get("cnpj") or not data.get("codigo"):
-                return jsonify({
-                    "erro": "CNPJ e código são obrigatórios"
-                }), 400
+                return jsonify({"erro": "CNPJ e código são obrigatórios"}), 400
 
             success = self.user_service.activate_user(data["cnpj"], data["codigo"])
             
             if success:
-                return jsonify({
-                    "mensagem": "Conta ativada com sucesso."
-                }), 200
+                return jsonify({"mensagem": "Conta ativada com sucesso."}), 200
             else:
-                return jsonify({
-                    "erro": "Código inválido ou CNPJ não encontrado."
-                }), 400
+                return jsonify({"erro": "Código inválido ou CNPJ não encontrado."}), 400
 
         except Exception as e:
             print(f"Erro interno: {e}")
-            return jsonify({
-                "erro": "Erro interno ao ativar a conta."
-            }), 500
-        
+            return jsonify({"erro": "Erro interno ao ativar a conta."}), 500
+    
     def login(self):
         try:
             data = request.get_json(silent=True) or {}
@@ -85,29 +76,16 @@ class UserController:
             if not login_identifier or not senha:
                 return jsonify({"erro": "Login e senha são obrigatórios"}), 400
 
-            #autenticação usuário usando o UserService
-            user = self.user_service.authenticate_user(login_identifier, senha)
-            if not user:
-                return jsonify({"erro": "Credenciais inválidas ou conta inativa"}), 401
+            # autenticação centralizada no AuthService
+            token, error_message = self.auth_service.authenticate(login_identifier, senha)
+            if error_message:
+                return jsonify({"erro": error_message}), 401
 
-            #token JWT - agr funciona com UserDomain
-            try:
-                token = self.auth_service._generate_jwt(user)
-            except ValueError as e:
-                return jsonify({"erro": str(e)}), 500
-            except Exception as jwt_err:
-                print(f"Erro ao gerar JWT: {jwt_err}")
-                return jsonify({"erro": "Falha ao gerar token de autenticação."}), 500
-
-            return jsonify({
-                "mensagem": "Login bem-sucedido!",
-                "token": token
-            }), 200
+            return jsonify({"mensagem": "Login bem-sucedido!", "token": token}), 200
 
         except Exception as e:
             print(f"Erro interno no login: {e}")
             return jsonify({"erro": "Erro interno ao tentar fazer login."}), 500
-
 
     @token_required
     def get_meus_dados(self, current_user):
