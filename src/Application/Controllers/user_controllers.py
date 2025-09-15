@@ -117,7 +117,7 @@ class UserController:
             return jsonify({"erro": "Erro interno ao buscar usuário"}), 500
 
     @token_required
-    def update_user(self, user_id):
+    def update_user(self, current_user, user_id):
         try:
             dados = request.json or {}
             user = self.user_service.update_user(user_id, dados)
@@ -129,7 +129,7 @@ class UserController:
             return jsonify({"erro": "Erro interno ao atualizar usuário"}), 500
 
     @token_required
-    def delete_user(self, user_id):
+    def delete_user(self, current_user, user_id):
         try:
             sucesso = self.user_service.delete_user(user_id)
             if not sucesso:
