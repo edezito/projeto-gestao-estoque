@@ -13,7 +13,7 @@ class UserController:
         self.blueprint.add_url_rule('/register', 'register', self.register_user, methods=['POST'])
         self.blueprint.add_url_rule('/activate', 'activate', self.activate_user, methods=['POST'])
         self.blueprint.add_url_rule('/login', 'login', self.login, methods=['POST'])
-        self.blueprint.add_url_rule('/me', 'me', self.get_profile, methods=['GET'])#rota protegida
+        self.blueprint.add_url_rule('/me', 'me', self.get_meus_dados, methods=['GET'])
         #novas rotas pro CRUD
         self.blueprint.add_url_rule('/<int:user_id>', 'get_user', self.get_user_by_id, methods=['GET'])
         self.blueprint.add_url_rule('/<int:user_id>', 'update_user', self.update_user, methods=['PUT'])
@@ -127,21 +127,8 @@ class UserController:
             print(f"Erro em get_meus_dados: {e}")
             return jsonify({"erro": "Erro interno ao buscar dados do usuário"}), 500
         
-    @AuthService.token_required
-    def get_profile(self, current_user):  #fznd esboço de rota protegida
-        try:
-            return jsonify({
-                "id": current_user.id,
-                "nome": current_user.nome,
-                "email": current_user.email,
-                "status": current_user.status
-            }), 200
-        except Exception as e:
-            print(f"Erro interno: {e}")
-            return jsonify({"erro": "Erro ao buscar dados do perfil."}), 500
-        
     @token_required
-    def get_user_by_id(self, user_id):
+    def get_user_by_id(self, current_user, user_id):
         try:
             user = self.user_service.get_user_by_id(user_id)
             if not user:
