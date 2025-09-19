@@ -123,11 +123,10 @@ class UserService:
             status=user.status
         )
 
-    def delete_user(self, user_id: int) -> bool:
-        user = UserModel.query.get(user_id)
+    def delete_user(self, user_id):
+        user = self.session.query(UserDomain).filter_by(id=user_id).first()
         if not user:
             return False
-
-        db.session.delete(user)
-        db.session.commit()
+        user.status = "Inativo"   # <- inativando em vez de excluir
+        self.session.commit()
         return True

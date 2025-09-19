@@ -15,7 +15,7 @@ class UserController:
         self.blueprint.add_url_rule('/login', 'login', self.login, methods=['POST'])
         # Mantendo rota protegida
         self.blueprint.add_url_rule('/me', 'me', self.get_meus_dados, methods=['GET'])
-        # Novas rotas pro CRUD
+       
         self.blueprint.add_url_rule('/<int:user_id>', 'get_user', self.get_user_by_id, methods=['GET'])
         self.blueprint.add_url_rule('/<int:user_id>', 'update_user', self.update_user, methods=['PUT'])
         self.blueprint.add_url_rule('/<int:user_id>', 'delete_user', self.delete_user, methods=['DELETE']) #rota para inativar e nao deletar
@@ -135,7 +135,7 @@ class UserController:
             sucesso = self.user_service.delete_user(user_id)
             if not sucesso:
                 return jsonify({"erro": "Usuário não encontrado"}), 404
-            return jsonify({"mensagem": "Usuário deletado com sucesso"}), 200
+            return jsonify({"mensagem": "Usuário inativado com sucesso"}), 200
         except Exception as e:
             print(f"Erro em delete_user: {e}")
-            return jsonify({"erro": "Erro interno ao deletar usuário"}), 500
+            return jsonify({"erro": "Erro interno ao inativar usuário"}), 500
