@@ -9,16 +9,26 @@ class UserService:
     def __init__(self):
         self.twilio_service = TwilioService()
 
-    def create_user(self, nome: str, cnpj: str, email: str, celular: str, senha: str) -> UserDomain: #centralizar paramentros
+    def create_user(self, **kwargs) -> UserDomain:
+        required_fields = ["nome", "cnpj", "email", "celular", "senha"]
+        missing_fields = [f for f in required_fields if f not in kwargs]
+        if missing_fields:
+            raise ValueError(f"Campos obrigatórios faltando: {', '.join(missing_fields)}")
+
+        nome = kwargs["nome"]
+        cnpj = kwargs["cnpj"]
+        email = kwargs["email"]
+        celular = kwargs["celular"]
+        senha = kwargs["senha"]
+
         # Verifica duplicidade
         existing_user = UserModel.query.filter(
             (UserModel.cnpj == cnpj) | (UserModel.email == email)
         ).first()
-        
         if existing_user:
             raise ValueError("CNPJ ou e-mail já cadastrado")
 
-        # Gera hash da senha (pode falhar se bcrypt não estiver instalado corretamente)
+        # Hash da senha
         try:
             senha_hash = bcrypt.hash(senha)
         except Exception as e:
@@ -37,9 +47,9 @@ class UserService:
         )
 
         db.session.add(user_model)
-        db.session.commit()  # garante que user_model.id seja gerado
+        db.session.commit()
 
-        # Envia código via WhatsApp sem quebrar o cadastro
+        # Envia código WhatsApp
         try:
             self.twilio_service.send_whatsapp_code(user_model.celular, codigo)
         except Exception as e:
