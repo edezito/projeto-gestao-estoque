@@ -1,4 +1,5 @@
 from flask import request, jsonify, Blueprint
+from src.Domain.user_data import UserData, preparar_dados_usuario
 from src.Application.Service.user_service import UserService
 from src.auth import AuthService, token_required
 
@@ -24,19 +25,19 @@ class UserController:
         try:
             data = request.get_json() or {}
             required_fields = ["nome", "cnpj", "email", "celular", "senha"]
-            missing_fields = [field for field in required_fields if not data.get(field)]
-            
+            missing_fields = [f for f in required_fields if not data.get(f)]
             if missing_fields:
                 return jsonify({"erro": f"Campos obrigatórios faltando: {', '.join(missing_fields)}"}), 400
 
-            
-            user = self.user_service.create_user(
+            user_data = UserData(
                 nome=data["nome"],
                 cnpj=data["cnpj"],
                 email=data["email"],
                 celular=data["celular"],
                 senha=data["senha"]
             )
+
+            user = self.user_service.create_user(user_data)
 
             return jsonify({
                 "mensagem": "Cadastro realizado. Código enviado via WhatsApp.",
