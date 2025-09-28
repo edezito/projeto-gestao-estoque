@@ -133,10 +133,16 @@ class UserService:
             status=user.status
         )
 
-    def delete_user(self, user_id):
-        user = self.session.query(UserDomain).filter_by(id=user_id).first()
-        if not user:
+    def inative_user(self, user_id: int) -> bool:
+        try:
+            user = UserModel.query.get(user_id)
+            if not user:
+                return False
+
+            user.status = "Inativo"
+            db.session.commit()
+            return True
+        except Exception as e:
+            db.session.rollback()
+            print(f"Erro ao inativar usuário no service: {e}")
             return False
-        user.status = "Inativo"   # <- inativando em vez de excluir
-        self.session.commit()
-        return True

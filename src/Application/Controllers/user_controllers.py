@@ -18,7 +18,7 @@ class UserController:
        
         self.blueprint.add_url_rule('/<int:user_id>', 'get_user', self.get_user_by_id, methods=['GET'])
         self.blueprint.add_url_rule('/<int:user_id>', 'update_user', self.update_user, methods=['PUT'])
-        self.blueprint.add_url_rule('/<int:user_id>', 'delete_user', self.delete_user, methods=['DELETE']) #rota para inativar e nao deletar
+        self.blueprint.add_url_rule('/<int:user_id>/inactivate', 'inative_user', self.inative_user, methods=['POST'])
 
     def register_user(self):
         try:
@@ -130,9 +130,9 @@ class UserController:
             return jsonify({"erro": "Erro interno ao atualizar usuário"}), 500
 
     @token_required
-    def delete_user(self, current_user, user_id):
+    def inative_user(self, current_user, user_id):
         try:
-            sucesso = self.user_service.delete_user(user_id)
+            sucesso = self.user_service.inative_user(user_id)
             if not sucesso:
                 return jsonify({"erro": "Usuário não encontrado"}), 404
             return jsonify({"mensagem": "Usuário inativado com sucesso"}), 200
