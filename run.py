@@ -1,6 +1,7 @@
 from flask import Flask
 from src.Config import db, init_db
 from src.Application.Controllers.user_controllers import UserController
+from src.Application.Controllers.produto_controller import ProductController
 
 def create_app():
     app = Flask(__name__)
@@ -16,9 +17,11 @@ def create_app():
 
     # Instancia o controlador
     user_controller = UserController()
+    product_controller = ProductController()
 
     # Registra o blueprint do controlador
     app.register_blueprint(user_controller.blueprint, url_prefix='/api/users')
+    app.register_blueprint(product_controller.blueprint, url_prefix='/api/products')
 
     # Rota raiz
     @app.route('/')
