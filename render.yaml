@@ -5,7 +5,7 @@ services:
     dockerfilePath: ./Dockerfile
     region: oregon
     plan: free
-    branch: developement
+    branch: development  # corrigi o nome da branch
     numInstances: 1
     envVars:
       - key: FLASK_APP
@@ -28,8 +28,8 @@ services:
         sync: false
 
 databases:
-  - type: postgres
-    name: estoque-db
+  - name: estoque-db
+    databaseName: estoque_db
+    user: estoque_user
     plan: free
     region: oregon
-    postgresVersion: "15"
