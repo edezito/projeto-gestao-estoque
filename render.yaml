@@ -1,0 +1,38 @@
+services:
+  # 1. O Banco de Dados PostgreSQL
+  - type: psql
+    name: estoque-db
+    databaseName: estoque_mercado
+    user: user
+    plan: free
+
+  # 2. A Aplicação Web (Flask/Gunicorn)
+  - type: web
+    name: estoque-web
+    runtime: docker # Diz ao Render para usar seu Dockerfile
+    dockerfilePath: ./Dockerfile
+    
+    # Variáveis de Ambiente
+    envVars:
+      - key: FLASK_APP
+        value: run.py
+      - key: FLASK_ENV
+        value: production
+      - key: PYTHONUNBUFFERED # Garante que os logs do Python saiam direto
+        value: 1
+        
+      # Conecta-se ao banco de dados criado acima
+      - key: DATABASE_URL
+        fromService:
+          type: psql
+          name: estoque-db # Deve ser o mesmo nome do serviço de DB acima
+          property: connectionString # Pega a URL de conexão interna
+          
+      - key: TWILIO_SID
+        sync: false 
+      - key: TWILIO_TOKEN
+        sync: false
+      - key: TWILIO_PHONE
+        sync: false
+      - key: SENHA_JWT
+        sync: false

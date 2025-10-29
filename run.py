@@ -1,3 +1,4 @@
+import os
 from flask import Flask
 from src.Config import db, init_db
 from src.Application.Controllers.user_controllers import UserController
@@ -6,10 +7,15 @@ from src.Application.Controllers.produto_controller import ProductController
 def create_app():
     app = Flask(__name__)
 
-    # Configurações básicas do Flask
-    app.config['SQLALCHEMY_DATABASE_URI'] = "mysql+mysqlconnector://user:user@db:3306/estoque_mercado"
+    database_url = os.environ.get('DATABASE_URL')
+
+    if database_url and database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+    
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.secret_key = "uma_chave_secreta"
+    app.secret_key = os.environ.get('SENHA_JWT')
 
     # Inicializa o banco de dados
     db.init_app(app)

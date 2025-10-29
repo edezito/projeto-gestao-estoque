@@ -2,12 +2,11 @@ FROM python:3.10-slim
 
 WORKDIR /src
 
-# Instalar dependências do sistema necessárias para MySQL e build
+# Instalar dependências do sistema
 RUN apt-get update && apt-get install -y \
-    default-libmysqlclient-dev \
     build-essential \
     pkg-config \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* # <--- default-libmysqlclient-dev REMOVIDO
 
 # Copiar requirements
 COPY requirements.txt .
