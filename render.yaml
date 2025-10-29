@@ -1,10 +1,10 @@
-# render.yaml (corrigido)
 services:
-  # 1. A Aplicação Web (Flask/Gunicorn)
+  # 1. Aplicação Flask (Docker)
   - type: web
     name: estoque-web
     runtime: docker
     dockerfilePath: ./Dockerfile
+    region: oregon
     envVars:
       - key: FLASK_APP
         value: run.py
@@ -13,8 +13,8 @@ services:
       - key: PYTHONUNBUFFERED
         value: "1"
       - key: DATABASE_URL
-        fromDatabase:
-          name: estoque-db       
+        fromService:
+          name: estoque-db
           property: connectionString
       - key: TWILIO_SID
         sync: false
@@ -25,8 +25,10 @@ services:
       - key: SENHA_JWT
         sync: false
 
-# 2. Defina o Postgres na lista `databases`
-databases:
-  - type: postgres
+  # 2. Banco de Dados PostgreSQL
+  - type: database
     name: estoque-db
+    databaseType: postgres
     plan: free
+    region: oregon
+    postgresVersion: "15"
