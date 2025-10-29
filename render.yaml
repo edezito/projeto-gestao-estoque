@@ -1,5 +1,5 @@
+# render.yaml (corrigido — Postgres em `databases`)
 services:
-  # 1. Aplicação Flask (Docker)
   - type: web
     name: estoque-web
     runtime: docker
@@ -13,7 +13,7 @@ services:
       - key: PYTHONUNBUFFERED
         value: "1"
       - key: DATABASE_URL
-        fromService:
+        fromDatabase:
           name: estoque-db
           property: connectionString
       - key: TWILIO_SID
@@ -25,10 +25,9 @@ services:
       - key: SENHA_JWT
         sync: false
 
-  # 2. Banco de Dados PostgreSQL
-  - type: database
+databases:
+  - type: postgres
     name: estoque-db
-    databaseType: postgres
     plan: free
     region: oregon
     postgresVersion: "15"
