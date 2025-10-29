@@ -5,7 +5,7 @@ services:
     dockerfilePath: ./Dockerfile
     region: oregon
     plan: free
-    branch: development  # corrigi o nome da branch
+    branch: developement  # corrigi o nome da branch
     numInstances: 1
     envVars:
       - key: FLASK_APP
