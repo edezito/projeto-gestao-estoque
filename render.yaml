@@ -1,10 +1,12 @@
-# render.yaml (corrigido — Postgres em `databases`)
 services:
   - type: web
     name: estoque-web
     runtime: docker
     dockerfilePath: ./Dockerfile
     region: oregon
+    plan: free
+    branch: developement
+    numInstances: 1
     envVars:
       - key: FLASK_APP
         value: run.py
