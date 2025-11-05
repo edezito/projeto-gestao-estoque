@@ -88,3 +88,20 @@ class UserService:
         
         return None
 
+    def inactivate_user_by_id(self, user_id: int) -> bool:
+        """
+        Inativa um usuário no banco de dados.
+        Retorna True se o usuário foi inativado ou False caso contrário.
+        """
+        user = UserModel.query.filter_by(id=user_id).first()
+
+        if user and user.status == "Ativo":
+            user.status = "Inativo"
+            # Opcional: Você pode limpar o código de ativação se ele ainda existir
+            user.codigo_ativacao = None
+            db.session.commit()
+            return True
+        
+        # Retorna False se o usuário não for encontrado ou já estiver inativo
+        return False
+

@@ -5,13 +5,20 @@ from src.auth import token_required
 class ProductController:
     def __init__(self):
         self.product_service = ProductService()
-        self.blueprint = Blueprint('product', __name__, url_prefix='/products')
+        # O prefixo base do Blueprint deve ser /api/products
+        self.blueprint = Blueprint('product', __name__, url_prefix='/api/products') # <<-- ALTERAÇÃO AQUI
         self._register_routes()
 
     def _register_routes(self):
-        self.blueprint.add_url_rule('', 'list_create_products', self.list_or_create, methods=['GET', 'POST'])
+        # GET /api/products, POST /api/products
+        self.blueprint.add_url_rule('', 'list_create_products', self.list_or_create, methods=['GET', 'POST']) 
+        # Rotas com ID: /api/products/<int:product_id>
         self.blueprint.add_url_rule('/<int:product_id>', 'product_details', self.get_product_details, methods=['GET'])
         self.blueprint.add_url_rule('/<int:product_id>', 'update_product', self.update_product, methods=['PUT'])
+        # Inativação /api/products/<int:product_id>/inactivate
+        self.blueprint.add_url_rule('/<int:product_id>/inactivate', 'inactivate_product', self.inactivate_product, methods=['PATCH'])
+        # O frontend também tem um DELETE, então considere adicioná-lo:
+        self.blueprint.add_url_rule('/<int:product_id>', 'delete_product', self.delete_product, methods=['DELETE'])
 
     # Rota única que gerencia GET e POST
     def list_or_create(self):
@@ -80,3 +87,41 @@ class ProductController:
             return jsonify({"erro": str(e)}), 400
         except Exception as e:
             return jsonify({"erro": f"Erro interno ao atualizar o produto: {e}"}), 500
+        
+    @token_required
+    def inactivate_product(self, current_user, product_id):
+        """Inativa um produto específico do usuário via PATCH."""
+        try:
+            inactivated_product = self.product_service.inactivate_product(
+                product_id=product_id,
+                user_id=current_user.id
+            )
+
+            if inactivated_product:
+                return jsonify(inactivated_product.to_dict()), 200
+            
+            # Note: 404 é adequado se não encontra ou não pertence ao usuário
+            return jsonify({"erro": "Produto não encontrado ou não pertence a você."}), 404
+
+        except Exception as e:
+            return jsonify({"erro": f"Erro interno ao inativar o produto: {e}"}), 500
+
+        
+    @token_required # <--- Adicionar este método
+    def delete_product(self, current_user, product_id):
+        """Exclui um produto específico do usuário."""
+        try:
+            # Chama o método de serviço para exclusão
+            deleted_count = self.product_service.delete_product(
+                product_id=product_id,
+                user_id=current_user.id
+            )
+
+            if deleted_count > 0:
+                return jsonify({"message": f"Produto {product_id} excluído com sucesso."}), 200
+            
+            # 404 se não encontra ou não pertence ao usuário
+            return jsonify({"erro": "Produto não encontrado ou não pertence a você."}), 404
+
+        except Exception as e:
+            return jsonify({"erro": f"Erro interno ao excluir o produto: {e}"}), 500

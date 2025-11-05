@@ -59,3 +59,29 @@ class ProductService:
             imagem=model.imagem,
             user_id=model.user_id
         )
+    
+    def inactivate_product(self, product_id: int, user_id: int) -> Optional[ProductDomain]:
+        """Define o status de um produto para 'Inativo' (se pertencer ao usuário)."""
+        
+        # Reutiliza a lógica de atualização, forçando a mudança de status
+        data = {"status": "Inativo"} 
+        
+        return self.update_product(
+            product_id=product_id,
+            user_id=user_id,
+            data=data
+        )
+    
+    def delete_product(self, product_id: int, user_id: int) -> int: # <--- Adicionar este método
+        """Remove um produto (se pertencer ao usuário). Retorna o número de linhas excluídas."""
+        
+        product_model = ProductModel.query.filter_by(id=product_id, user_id=user_id).first()
+        
+        if not product_model:
+            return 0 # Não encontrou o produto para este usuário
+
+        db.session.delete(product_model)
+        db.session.commit()
+        
+        # Retorna 1 para indicar que a exclusão foi bem-sucedida
+        return 1
