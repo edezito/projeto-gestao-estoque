@@ -47,7 +47,17 @@ class AuthService:
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
+        # Permite requisições OPTIONS sem autenticação (para preflight CORS)
+        if request.method == 'OPTIONS':
+            response = jsonify({'status': 'preflight ok'})
+            response.headers.add('Access-Control-Allow-Origin', '*')
+            response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+            response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+            return response, 200
+            
         token = None
+        
+        # Verifica o token no header Authorization
         if "Authorization" in request.headers:
             auth_header = request.headers["Authorization"]
             if auth_header.startswith("Bearer "):

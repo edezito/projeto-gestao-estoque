@@ -10,12 +10,9 @@ class VendaController:
         self._register_routes()
 
     def _register_routes(self):
-        # GET /api/sales, POST /api/sales
-        self.blueprint.add_url_rule('', 'list_create_sales', self.list_or_create, methods=['GET', 'POST'])
-        # Rotas com ID: /api/sales/<int:sale_id>
-        self.blueprint.add_url_rule('/<int:sale_id>', 'sale_details', self.get_sale_details, methods=['GET'])
-        # DELETE (opcional, seguindo padrão do produto)
-        self.blueprint.add_url_rule('/<int:sale_id>', 'delete_sale', self.delete_sale, methods=['DELETE'])
+        self.blueprint.add_url_rule('', 'list_create_sales', self.list_or_create, methods=['GET', 'POST', 'OPTIONS'])
+        self.blueprint.add_url_rule('/<int:sale_id>', 'sale_details', self.get_sale_details, methods=['GET', 'OPTIONS'])
+        self.blueprint.add_url_rule('/<int:sale_id>', 'delete_sale', self.delete_sale, methods=['DELETE', 'OPTIONS'])
 
     # Rota única que gerencia GET e POST
     def list_or_create(self):

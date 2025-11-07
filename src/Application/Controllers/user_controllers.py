@@ -12,12 +12,12 @@ class UserController:
         self._register_routes()
 
     def _register_routes(self):
-        self.blueprint.add_url_rule('/register', 'register', self.register_user, methods=['POST'])
-        self.blueprint.add_url_rule('/activate', 'activate', self.activate_user, methods=['POST'])
-        self.blueprint.add_url_rule('/login', 'login', self.login, methods=['POST'])
-        self.blueprint.add_url_rule('/<int:user_id>', 'get_user_by_id', self.get_profile_by_id, methods=['GET'])
-        self.blueprint.add_url_rule('/<int:user_id>', 'update_user', self.update_user, methods=['PUT'])
-        self.blueprint.add_url_rule('/<int:user_id>/inactivate', 'inactivate_user', self.inactivate_user, methods=['POST'])
+        self.blueprint.add_url_rule('/register', 'register', self.register_user, methods=['POST', 'OPTIONS'])
+        self.blueprint.add_url_rule('/activate', 'activate', self.activate_user, methods=['POST', 'OPTIONS'])
+        self.blueprint.add_url_rule('/login', 'login', self.login, methods=['POST', 'OPTIONS'])
+        self.blueprint.add_url_rule('/<int:user_id>', 'get_user_by_id', self.get_profile_by_id, methods=['GET', 'OPTIONS'])
+        self.blueprint.add_url_rule('/<int:user_id>', 'update_user', self.update_user, methods=['PUT', 'OPTIONS'])
+        self.blueprint.add_url_rule('/<int:user_id>/inactivate', 'inactivate_user', self.inactivate_user, methods=['POST', 'OPTIONS'])
 
     def register_user(self):
         try:

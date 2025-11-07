@@ -10,15 +10,11 @@ class ProductController:
         self._register_routes()
 
     def _register_routes(self):
-        # GET /api/products, POST /api/products
-        self.blueprint.add_url_rule('', 'list_create_products', self.list_or_create, methods=['GET', 'POST']) 
-        # Rotas com ID: /api/products/<int:product_id>
-        self.blueprint.add_url_rule('/<int:product_id>', 'product_details', self.get_product_details, methods=['GET'])
-        self.blueprint.add_url_rule('/<int:product_id>', 'update_product', self.update_product, methods=['PUT'])
-        # Inativação /api/products/<int:product_id>/inactivate
-        self.blueprint.add_url_rule('/<int:product_id>/inactivate', 'inactivate_product', self.inactivate_product, methods=['PATCH'])
-        # O frontend também tem um DELETE, então considere adicioná-lo:
-        self.blueprint.add_url_rule('/<int:product_id>', 'delete_product', self.delete_product, methods=['DELETE'])
+        self.blueprint.add_url_rule('', 'list_create_products', self.list_or_create, methods=['GET', 'POST', 'OPTIONS'])
+        self.blueprint.add_url_rule('/<int:product_id>', 'product_details', self.get_product_details, methods=['GET', 'OPTIONS'])
+        self.blueprint.add_url_rule('/<int:product_id>', 'update_product', self.update_product, methods=['PUT', 'OPTIONS'])
+        self.blueprint.add_url_rule('/<int:product_id>/inactivate', 'inactivate_product', self.inactivate_product, methods=['PATCH', 'OPTIONS'])
+        self.blueprint.add_url_rule('/<int:product_id>', 'delete_product', self.delete_product, methods=['DELETE', 'OPTIONS'])
 
     # Rota única que gerencia GET e POST
     def list_or_create(self):

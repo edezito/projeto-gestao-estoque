@@ -6,25 +6,34 @@ from src.Application.Controllers.user_controllers import UserController
 from src.Application.Controllers.produto_controller import ProductController
 from src.Application.Controllers.venda_controller import VendaController 
 
+@app.before_request
+def handle_preflight():
+    if request.method == "OPTIONS":
+        response = jsonify({"status": "preflight"})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")
+        response.headers.add("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS")
+        return response
+
 def create_app():
     app = Flask(__name__)
 
     frontend_urls_env = os.environ.get('FRONTEND_URL') 
     
-    # 1. Se a variável de ambiente não estiver definida ou for '*': permite TUDO.
     if not frontend_urls_env or frontend_urls_env == '*':
         print("AVISO: CORS está configurado para permitir TODAS as origens ('*').")
-        CORS(app)
+        CORS(app)  # Isso permite tudo, incluindo preflight
     else:
-        # 2. Divide as URLs da variável de ambiente em uma lista
         allowed_origins = [url.strip() for url in frontend_urls_env.split(',')]
         
         print(f"CORS configurado para permitir: {', '.join(allowed_origins)}")
         
-        # Configura o CORS de forma restrita usando a lista de origens.
-        CORS(app, resources={
-            r"/api/*": {"origins": allowed_origins}
-        }, supports_credentials=True)
+        # Configuração mais completa do CORS
+        CORS(app, 
+             resources={r"/api/*": {"origins": allowed_origins}},
+             supports_credentials=True,
+             allow_headers=["Content-Type", "Authorization", "Access-Control-Allow-Credentials"],
+             methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
 
     # Pega a URL do banco de dados do ambiente
     database_url = os.environ.get('DATABASE_URL')
