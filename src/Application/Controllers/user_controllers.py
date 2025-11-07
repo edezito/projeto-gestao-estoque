@@ -83,6 +83,14 @@ class UserController:
             }), 500
     
     def login(self):
+        # Tratamento EXPLÍCITO para OPTIONS
+        if request.method == 'OPTIONS':
+            response = jsonify({'status': 'preflight ok'})
+            response.headers.add('Access-Control-Allow-Origin', '*')
+            response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+            response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+            return response
+            
         try:
             data = request.get_json(silent=True)
             if data is None:
@@ -99,15 +107,17 @@ class UserController:
             if error_message:
                 return jsonify({"erro": error_message}), 401
 
-            return jsonify({
+            response = jsonify({
                 "mensagem": "Login bem-sucedido!",
                 "token": token
-            }), 200
+            })
+            response.headers.add('Access-Control-Allow-Origin', '*')
+            return response, 200
 
         except Exception as e:
             print(f"Erro interno no login: {e}")
             return jsonify({"erro": "Erro interno ao tentar fazer login."}), 500
-
+        
     @token_required
     def get_profile(self, current_user):
         try:

@@ -1,39 +1,20 @@
 import os
-from flask import Flask
+from flask import Flask, request, jsonify
 from flask_cors import CORS 
 from src.Config import db, init_db
 from src.Application.Controllers.user_controllers import UserController
 from src.Application.Controllers.produto_controller import ProductController
 from src.Application.Controllers.venda_controller import VendaController 
 
-@app.before_request
-def handle_preflight():
-    if request.method == "OPTIONS":
-        response = jsonify({"status": "preflight"})
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")
-        response.headers.add("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS")
-        return response
-
 def create_app():
     app = Flask(__name__)
 
-    frontend_urls_env = os.environ.get('FRONTEND_URL') 
-    
-    if not frontend_urls_env or frontend_urls_env == '*':
-        print("AVISO: CORS está configurado para permitir TODAS as origens ('*').")
-        CORS(app)  # Isso permite tudo, incluindo preflight
-    else:
-        allowed_origins = [url.strip() for url in frontend_urls_env.split(',')]
-        
-        print(f"CORS configurado para permitir: {', '.join(allowed_origins)}")
-        
-        # Configuração mais completa do CORS
-        CORS(app, 
-             resources={r"/api/*": {"origins": allowed_origins}},
-             supports_credentials=True,
-             allow_headers=["Content-Type", "Authorization", "Access-Control-Allow-Credentials"],
-             methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+    # Configuração CORS MAIS PERMISSIVA para debugging
+    CORS(app, 
+         resources={r"/*": {"origins": "*"}},
+         supports_credentials=True,
+         allow_headers=["Content-Type", "Authorization", "Access-Control-Allow-Credentials"],
+         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
 
     # Pega a URL do banco de dados do ambiente
     database_url = os.environ.get('DATABASE_URL')
@@ -43,15 +24,31 @@ def create_app():
         database_url = database_url.replace("postgres://", "postgresql://", 1)
 
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-    
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    
-    # Configura a chave secreta
     app.config['SECRET_KEY'] = os.environ.get('SENHA_JWT')
 
     # Inicializa o banco de dados
     db.init_app(app)
     init_db(app)
+
+    # Handler global para OPTIONS (preflight)
+    @app.before_request
+    def handle_preflight():
+        if request.method == "OPTIONS":
+            response = jsonify({"status": "preflight"})
+            response.headers.add("Access-Control-Allow-Origin", "*")
+            response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")
+            response.headers.add("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS")
+            return response
+
+    # Adiciona headers CORS em todas as respostas
+    @app.after_request
+    def after_request(response):
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
 
     # Instancia o controlador
     user_controller = UserController()
