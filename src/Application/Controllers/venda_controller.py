@@ -5,34 +5,20 @@ from src.auth import token_required
 class VendaController:
     def __init__(self):
         self.venda_service = VendaService()
-        # Prefixo base do Blueprint: /api/sales
         self.blueprint = Blueprint('venda', __name__, url_prefix='/api/sales')
         self._register_routes()
 
     def _register_routes(self):
-        self.blueprint.add_url_rule('', 'list_create_sales', self.list_or_create, methods=['GET', 'POST', 'OPTIONS'])
-        self.blueprint.add_url_rule('/<int:sale_id>', 'sale_details', self.get_sale_details, methods=['GET', 'OPTIONS'])
-        self.blueprint.add_url_rule('/<int:sale_id>', 'delete_sale', self.delete_sale, methods=['DELETE', 'OPTIONS'])
-
-    # Rota única que gerencia GET e POST
-    def list_or_create(self):
-        if request.method == 'POST':
-            return self.create_sale()
-        return self.list_sales()
+        # ✅ CORRIGIDO: Separar GET e POST em métodos distintos
+        self.blueprint.add_url_rule('', 'list_sales', self.list_sales, methods=['GET'])
+        self.blueprint.add_url_rule('', 'create_sale', self.create_sale, methods=['POST'])
+        self.blueprint.add_url_rule('/<int:sale_id>', 'get_sale', self.get_sale_details, methods=['GET'])
+        self.blueprint.add_url_rule('/<int:sale_id>', 'delete_sale', self.delete_sale, methods=['DELETE'])
 
     @token_required
     def create_sale(self, current_user):
         """
         Cria uma nova venda associada ao seller autenticado.
-        Payload esperado (JSON):
-            {
-                "produto_id": <int>,
-                "quantidade": <int>
-            }
-        Regras de negócio (implementadas no service):
-            - Não vender mais do que a quantidade em estoque.
-            - Produtos inativados não podem ser vendidos.
-            - Sellers inativos não podem realizar vendas.
         """
         try:
             data = request.get_json() or {}
@@ -61,7 +47,6 @@ class VendaController:
             return jsonify(venda.to_dict()), 201
 
         except ValueError as e:
-            # Regra de negócio violada (ex: estoque insuficiente, produto inativo, seller inativo)
             return jsonify({"erro": str(e)}), 400
         except Exception as e:
             return jsonify({"erro": f"Erro interno ao processar a venda: {e}"}), 500
@@ -88,10 +73,7 @@ class VendaController:
 
     @token_required
     def delete_sale(self, current_user, sale_id):
-        """
-        Exclui uma venda (se aplicável ao seu fluxo).
-        Mantive esse endpoint seguindo o padrão do produto; adapte conforme necessidade.
-        """
+        """Exclui uma venda."""
         try:
             deleted_count = self.venda_service.delete_sale(sale_id=sale_id, seller_id=current_user.id)
             if deleted_count > 0:

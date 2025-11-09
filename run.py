@@ -9,7 +9,7 @@ from src.Application.Controllers.venda_controller import VendaController
 def create_app():
     app = Flask(__name__)
 
-    # Configuração CORS MAIS PERMISSIVA para debugging
+    # ✅ APENAS ESTA CONFIGURAÇÃO - remova as outras
     CORS(app, 
          resources={r"/*": {"origins": "*"}},
          supports_credentials=True,
@@ -30,26 +30,6 @@ def create_app():
     # Inicializa o banco de dados
     db.init_app(app)
     init_db(app)
-
-    # Handler global para OPTIONS (preflight)
-    @app.before_request
-    def handle_preflight():
-        if request.method == "OPTIONS":
-            response = jsonify({"status": "preflight"})
-            response.headers.add("Access-Control-Allow-Origin", "*")
-            response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")
-            response.headers.add("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS")
-            return response
-
-    # Adiciona headers CORS em todas as respostas
-    @app.after_request
-    def after_request(response):
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-        response.headers.add('Access-Control-Allow-Credentials', 'true')
-        return response
-
     # Instancia o controlador
     user_controller = UserController()
     product_controller = ProductController()
