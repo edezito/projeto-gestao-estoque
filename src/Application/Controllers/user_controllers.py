@@ -96,36 +96,24 @@ class UserController:
             if not login_identifier or not senha:
                 return jsonify({"erro": "Login e senha são obrigatórios"}), 400
                 
-            token, error_message = self.auth_service.authenticate(login_identifier, senha)
+            # ✅ AGORA RECEBE 3 VALORES: token, user_data, error_message
+            token, user_data, error_message = self.auth_service.authenticate(login_identifier, senha)
 
             if error_message:
                 return jsonify({"erro": error_message}), 401
 
-            return jsonify({
+            # ✅ RETORNA TOKEN E DADOS DO USUÁRIO
+            response_data = {
                 "mensagem": "Login bem-sucedido!",
-                "token": token
-            }), 200
+                "token": token,
+                "user": user_data  # ✅ ADICIONA OS DADOS DO USUÁRIO
+            }
+
+            return jsonify(response_data), 200
 
         except Exception as e:
             print(f"Erro interno no login: {e}")
             return jsonify({"erro": "Erro interno ao tentar fazer login."}), 500
-        
-    @token_required 
-    def get_profile_by_id(self, current_user, user_id):
-        """Endpoint para buscar o perfil de um usuário pelo ID."""
-        try:
-            user_domain = self.user_service.get_user_by_id(user_id)
-
-            if not user_domain:
-                return jsonify({"mensagem": "Usuário não encontrado."}), 404
-
-            user_data = user_domain.to_dict()
-            user_data.pop('senha', None)
-
-            return jsonify(user_data), 200
-
-        except Exception as e:
-            return jsonify({"mensagem": "Erro interno do servidor", "erro": str(e)}), 500
         
     @token_required
     def update_user(self, current_user, user_id):

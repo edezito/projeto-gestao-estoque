@@ -14,22 +14,35 @@ class AuthService:
         """
         Método central para autenticação.
         Verifica as credenciais e, se válidas, gera o token JWT.
-        Retorna (token, None) em caso de sucesso ou (None, error_message) em caso de falha.
+        Retorna (token, user_data, None) em caso de sucesso ou (None, None, error_message) em caso de falha.
         """
 
         user = self.user_service.authenticate_user(login_identifier, senha)
 
         if not user:
-            return None, "Credenciais inválidas ou conta inativa"
+            return None, None, "Credenciais inválidas ou conta inativa"
+        
         try:
             token = self._generate_jwt(user)
-            return token, None
+            
+            # ✅ AGORA RETORNA OS DADOS DO USUÁRIO TAMBÉM
+            user_data = {
+                'id': user.id,
+                'nome': user.nome,
+                'cnpj': user.cnpj,
+                'email': user.email,
+                'celular': user.celular,
+                'status': user.status
+            }
+            
+            return token, user_data, None
+            
         except ValueError as e:
             print(f"Erro de configuração JWT: {e}")
-            return None, "Erro de configuração no servidor."
+            return None, None, "Erro de configuração no servidor."
         except Exception as e:
             print(f"Erro ao gerar JWT: {e}")
-            return None, "Falha ao gerar token de autenticação."
+            return None, None, "Falha ao gerar token de autenticação."
 
     def _generate_jwt(self, user):
         """Gera um token JWT para um objeto UserDomain."""
