@@ -9,7 +9,7 @@ class VendaController:
         self._register_routes()
 
     def _register_routes(self):
-        # ✅ CORRIGIDO: Separar GET e POST em métodos distintos
+        # ✅ CORRETO: Separar GET e POST em métodos distintos
         self.blueprint.add_url_rule('', 'list_sales', self.list_sales, methods=['GET'])
         self.blueprint.add_url_rule('', 'create_sale', self.create_sale, methods=['POST'])
         self.blueprint.add_url_rule('/<int:sale_id>', 'get_sale', self.get_sale_details, methods=['GET'])
@@ -75,8 +75,9 @@ class VendaController:
     def delete_sale(self, current_user, sale_id):
         """Exclui uma venda."""
         try:
-            deleted_count = self.venda_service.delete_sale(sale_id=sale_id, seller_id=current_user.id)
-            if deleted_count > 0:
+            # ✅ CORREÇÃO: O service agora retorna bool, não int
+            success = self.venda_service.delete_sale(sale_id=sale_id, seller_id=current_user.id)
+            if success:
                 return jsonify({"message": f"Venda {sale_id} excluída com sucesso."}), 200
             return jsonify({"erro": "Venda não encontrada ou não pertence a você."}), 404
         except Exception as e:
