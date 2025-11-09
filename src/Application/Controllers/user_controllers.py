@@ -10,15 +10,17 @@ class UserController:
         self._register_routes()
 
     def _register_routes(self):
-        # ✅ Rotas principais
+        # ✅ ROTAS PRINCIPAIS - APENAS AS QUE EXISTEM
         self.blueprint.add_url_rule('/register', 'register', self.register_user, methods=['POST'])
         self.blueprint.add_url_rule('/activate', 'activate', self.activate_user, methods=['POST'])
         self.blueprint.add_url_rule('/login', 'login', self.login, methods=['POST'])
-        self.blueprint.add_url_rule('/<int:user_id>', 'get_user_by_id', self.get_profile_by_id, methods=['GET'])
-        self.blueprint.add_url_rule('/<int:user_id>', 'update_user', self.update_user, methods=['PUT'])
-        self.blueprint.add_url_rule('/<int:user_id>/inactivate', 'inactivate_user', self.inactivate_user, methods=['POST'])
         
-        # ✅ ROTAS DE DEBUG (adicionadas)
+        # ❌ REMOVIDAS - ROTAS PROBLEMÁTICAS QUE NÃO EXISTEM
+        # self.blueprint.add_url_rule('/<int:user_id>', 'get_user_by_id', self.get_profile_by_id, methods=['GET'])
+        # self.blueprint.add_url_rule('/<int:user_id>', 'update_user', self.update_user, methods=['PUT'])
+        # self.blueprint.add_url_rule('/<int:user_id>/inactivate', 'inactivate_user', self.inactivate_user, methods=['POST'])
+        
+        # ✅ ROTAS DE DEBUG (funcionam)
         self.blueprint.add_url_rule('/list-all', 'list_all_users', self.list_all_users, methods=['GET'])
         self.blueprint.add_url_rule('/get-activation-code/<string:cnpj>', 'get_activation_code', self.get_activation_code, methods=['GET'])
 
@@ -114,48 +116,6 @@ class UserController:
         except Exception as e:
             print(f"Erro interno no login: {e}")
             return jsonify({"erro": "Erro interno ao tentar fazer login."}), 500
-        
-    @token_required
-    def update_user(self, current_user, user_id):
-        """Endpoint para atualizar os dados de um usuário existente."""
-        try:
-            data = request.get_json(silent=True)
-            if data is None:
-                return jsonify({"mensagem": "JSON inválido"}), 400
-                
-            if not data:
-                return jsonify({"mensagem": "Dados de atualização ausentes no corpo da requisição."}), 400
-
-            updated_user_domain = self.user_service.update_user(user_id, data)
-
-            if not updated_user_domain:
-                return jsonify({"mensagem": "Usuário não encontrado ou falha na atualização."}), 404
-
-            user_data = updated_user_domain.to_dict()
-            user_data.pop('senha', None)
-
-            return jsonify({"mensagem": "Usuário atualizado com sucesso.", "usuario": user_data}), 200
-
-        except ValueError as e:
-            return jsonify({"mensagem": str(e)}), 400
-        except Exception as e:
-            print(f"Erro ao atualizar usuário: {e}")
-            return jsonify({"mensagem": "Erro interno do servidor."}), 500
-        
-    @token_required
-    def inactivate_user(self, current_user, user_id):
-        """Endpoint para inativar um usuário pelo ID."""
-        try:
-            success = self.user_service.inactivate_user_by_id(user_id)
-
-            if success:
-                return jsonify({"mensagem": f"Usuário {user_id} inativado com sucesso."}), 200
-            else:
-                return jsonify({"mensagem": "Usuário não encontrado ou já está inativo."}), 404
-
-        except Exception as e:
-            print(f"Erro ao inativar usuário: {e}")
-            return jsonify({"mensagem": "Erro interno do servidor."}), 500
 
     # ✅ NOVAS ROTAS DE DEBUG
     def list_all_users(self):
