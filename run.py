@@ -33,7 +33,10 @@ def create_app():
 
     # Inicializa o banco de dados
     db.init_app(app)
-    init_db(app)
+    
+    # ✅ MOVER init_db para dentro do contexto da aplicação
+    with app.app_context():
+        init_db(app)
     
     # Instancia o controlador
     user_controller = UserController()
@@ -43,7 +46,7 @@ def create_app():
     # Registra o blueprint do controlador
     app.register_blueprint(user_controller.blueprint, url_prefix='/api/users')
     app.register_blueprint(product_controller.blueprint, url_prefix='/api/products')
-    app.register_blueprint(venda_controller.blueprint, url_prefix='/api/sales')  # ✅ Corrigido para /api/sales
+    app.register_blueprint(venda_controller.blueprint, url_prefix='/api/sales')
 
     # Rota raiz
     @app.route('/')
@@ -57,5 +60,10 @@ def create_app():
 
     return app
 
-# Variável global para Gunicorn
-app = create_app()
+# ✅ CORREÇÃO: Apenas crie a app quando executado diretamente
+if __name__ == '__main__':
+    app = create_app()
+    app.run(host='0.0.0.0', port=5000, debug=False)
+else:
+    # ✅ Para Gunicorn, apenas exporte a função create_app
+    app = create_app()
