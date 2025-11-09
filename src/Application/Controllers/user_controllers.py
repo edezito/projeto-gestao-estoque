@@ -10,13 +10,17 @@ class UserController:
         self._register_routes()
 
     def _register_routes(self):
-        # ✅ CORRIGIDO: Rotas bem definidas sem conflitos
+        # ✅ Rotas principais
         self.blueprint.add_url_rule('/register', 'register', self.register_user, methods=['POST'])
         self.blueprint.add_url_rule('/activate', 'activate', self.activate_user, methods=['POST'])
         self.blueprint.add_url_rule('/login', 'login', self.login, methods=['POST'])
         self.blueprint.add_url_rule('/<int:user_id>', 'get_user_by_id', self.get_profile_by_id, methods=['GET'])
         self.blueprint.add_url_rule('/<int:user_id>', 'update_user', self.update_user, methods=['PUT'])
         self.blueprint.add_url_rule('/<int:user_id>/inactivate', 'inactivate_user', self.inactivate_user, methods=['POST'])
+        
+        # ✅ ROTAS DE DEBUG (adicionadas)
+        self.blueprint.add_url_rule('/list-all', 'list_all_users', self.list_all_users, methods=['GET'])
+        self.blueprint.add_url_rule('/get-activation-code/<string:cnpj>', 'get_activation_code', self.get_activation_code, methods=['GET'])
 
     def register_user(self):
         try:
@@ -81,7 +85,6 @@ class UserController:
             }), 500
     
     def login(self):
-            
         try:
             data = request.get_json(silent=True)
             if data is None:
@@ -165,3 +168,51 @@ class UserController:
         except Exception as e:
             print(f"Erro ao inativar usuário: {e}")
             return jsonify({"mensagem": "Erro interno do servidor."}), 500
+
+    # ✅ NOVAS ROTAS DE DEBUG
+    def list_all_users(self):
+        """Lista todos os usuários (para debug)"""
+        try:
+            from src.Infrastructure.Model.user import UserModel
+            users = UserModel.query.all()
+            
+            result = []
+            for user in users:
+                result.append({
+                    'id': user.id,
+                    'nome': user.nome,
+                    'cnpj': user.cnpj,
+                    'email': user.email,
+                    'celular': user.celular,
+                    'status': user.status,
+                    'codigo_ativacao': user.codigo_ativacao
+                })
+            
+            return jsonify({
+                'total': len(result),
+                'users': result
+            }), 200
+            
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    def get_activation_code(self, cnpj):
+        """Busca código de ativação por CNPJ (para debug)"""
+        try:
+            from src.Infrastructure.Model.user import UserModel
+            user = UserModel.query.filter_by(cnpj=cnpj).first()
+            
+            if user:
+                return jsonify({
+                    'id': user.id,
+                    'nome': user.nome,
+                    'cnpj': user.cnpj,
+                    'celular': user.celular,
+                    'codigo_ativacao': user.codigo_ativacao,
+                    'status': user.status
+                }), 200
+            else:
+                return jsonify({'erro': 'Usuário não encontrado'}), 404
+                
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
