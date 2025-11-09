@@ -5,7 +5,7 @@ from datetime import datetime
 from sqlalchemy.orm import joinedload 
 
 from src.Domain.venda import VendaDomain 
-from src.Infrastructure.Model.vendas import VendaModel  
+from src.Infrastructure.Model.vendas import VendaModel
 from src.Infrastructure.Model.produtos import ProductModel
 from src.Infrastructure.Model.user import UserModel
 from src.Config import db
