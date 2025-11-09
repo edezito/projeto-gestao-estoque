@@ -18,9 +18,7 @@ class VendaService:
     def create_sale(self, produto_id: int, quantidade: int, seller_id: int) -> VendaDomain:
         """
         Cria uma venda e atualiza o estoque do produto.
-        ... (o resto da sua lógica de criação de venda está correta) ...
         """
-        # ... (Toda a sua lógica de create_sale de 30 linhas está correta) ...
         if quantidade <= 0:
             raise ValueError("A quantidade vendida deve ser maior que zero.")
 
@@ -29,13 +27,9 @@ class VendaService:
         if not user:
             raise ValueError("Seller (usuário) não encontrado.")
 
-        # Checa se o seller está ativo (adapta conforme campos reais do seu UserModel)
+        # Checa se o seller está ativo
         is_user_active = True
-        if hasattr(user, "ativo"):
-            is_user_active = bool(getattr(user, "ativo"))
-        elif hasattr(user, "is_active"):
-            is_user_active = bool(getattr(user, "is_active"))
-        elif hasattr(user, "status"):
+        if hasattr(user, "status"):
             is_user_active = (str(getattr(user, "status")).lower() != "inativo")
 
         if not is_user_active:
@@ -57,8 +51,6 @@ class VendaService:
             is_produto_active = True
             if hasattr(produto, "status"):
                 is_produto_active = (str(getattr(produto, "status")).lower() == "ativo")
-            elif hasattr(produto, "ativo"):
-                is_produto_active = bool(getattr(produto, "ativo"))
 
             if not is_produto_active:
                 raise ValueError("Produtos inativados não podem ser vendidos.")
@@ -93,9 +85,8 @@ class VendaService:
 
             # Atualiza a instância (garantir id etc.)
             session.refresh(venda_model)
-            
-            # ✅ Ao criar, também mapeamos com os detalhes do produto
-            # (mesmo que 'produto' não esteja carregado, podemos acessá-lo pois está na sessão)
+            
+            # Ao criar, também mapeamos com os detalhes do produto
             return self._map_model_to_domain(venda_model)
 
         except ValueError:
@@ -108,15 +99,15 @@ class VendaService:
     def get_sales_by_seller(self, seller_id: int) -> List[VendaDomain]:
         """Retorna todas as vendas do seller, ordenadas por data (desc)."""
         try:
-            # ✅ PASSO 2: Use options(joinedload()) para buscar o produto junto
+            # ✅ PASSO 2: Use options(joinedload()) para buscar o produto junto
             vendas = VendaModel.query.options(
-                joinedload(VendaModel.produto) # Isso usa o 'relationship' do VendaModel
-            ).filter_by(
-                seller_id=seller_id
-            ).order_by(
-                VendaModel.created_at.desc()
-            ).all()
-            
+                joinedload(VendaModel.produto) # Isso usa o 'relationship' do VendaModel
+            ).filter_by(
+                seller_id=seller_id
+            ).order_by(
+                VendaModel.created_at.desc()
+            ).all()
+            
             return [self._map_model_to_domain(v) for v in vendas]
         except Exception as e:
             raise Exception(f"Erro interno ao listar vendas: {e}")
@@ -124,13 +115,13 @@ class VendaService:
     def get_sale_by_id_and_seller(self, sale_id: int, seller_id: int) -> Optional[VendaDomain]:
         """Retorna uma venda específica se pertencer ao seller."""
         try:
-            # ✅ PASSO 3: Use options(joinedload()) aqui também
+            # ✅ PASSO 3: Use options(joinedload()) aqui também
             venda = VendaModel.query.options(
-                joinedload(VendaModel.produto)
-            ).filter_by(
-                id=sale_id, seller_id=seller_id
-            ).first()
-            
+                joinedload(VendaModel.produto)
+            ).filter_by(
+                id=sale_id, seller_id=seller_id
+            ).first()
+            
             if not venda:
                 return None
             return self._map_model_to_domain(venda)
@@ -138,7 +129,7 @@ class VendaService:
             raise Exception(f"Erro interno ao buscar venda: {e}")
 
     def delete_sale(self, sale_id: int, seller_id: int) -> int:
-        # ... (Sua lógica de delete está correta) ...
+        # (Sua lógica de delete está correta)
         session = db.session
         try:
             venda = VendaModel.query.filter_by(id=sale_id, seller_id=seller_id).first()
@@ -162,9 +153,9 @@ class VendaService:
         """
         Mapeia VendaModel para VendaDomain, incluindo os detalhes do produto.
         """
-        
-        # ✅ PASSO 4: Extrair os detalhes do produto
-        # 'model.produto' existe graças ao 'relationship' e ao 'joinedload'
+        
+        # ✅ PASSO 4: Extrair os detalhes do produto
+        # 'model.produto' existe graças ao 'relationship' e ao 'joinedload'
         produto_details = None
         if model.produto: 
             produto_details = {
@@ -174,7 +165,8 @@ class VendaService:
                 # Adicione aqui outros campos do produto que você queira
             }
 
-        # ✅ PASSO 5: Passe os 'produto_details' para o construtor do VendaDomain
+        # ✅ PASSO 5: Passe os 'produto_details' para o construtor do VendaDomain
+        # ✅ CORREÇÃO: Removido o texto 'Deste' e o espaço inválido
         return VendaDomain(
             id=model.id,
             produto_id=model.produto_id,
@@ -183,4 +175,4 @@ class VendaService:
             seller_id=model.seller_id,
             created_at=model.created_at,
             produto_details=produto_details # Aqui está a mudança
-    Deste   )
+        )
