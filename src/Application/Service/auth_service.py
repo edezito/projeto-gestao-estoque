@@ -13,19 +13,18 @@ class AuthService:
     def authenticate(self, login_identifier: str, senha: str):
         """
         Método central para autenticação.
-        Verifica as credenciais e, se válidas, gera o token JWT.
-        Retorna (token, user_data, None) em caso de sucesso ou (None, None, error_message) em caso de falha.
+        ✅ AGORA RETORNA 3 VALORES: (token, user_data, error_message)
         """
 
         user = self.user_service.authenticate_user(login_identifier, senha)
 
         if not user:
-            return None, None, "Credenciais inválidas ou conta inativa"
+            return None, None, "Credenciais inválidas ou conta inativa"  # ✅ 3 valores
         
         try:
             token = self._generate_jwt(user)
             
-            # ✅ AGORA RETORNA OS DADOS DO USUÁRIO TAMBÉM
+            # ✅ RETORNA OS DADOS DO USUÁRIO
             user_data = {
                 'id': user.id,
                 'nome': user.nome,
@@ -35,14 +34,14 @@ class AuthService:
                 'status': user.status
             }
             
-            return token, user_data, None
+            return token, user_data, None  # ✅ 3 valores
             
         except ValueError as e:
             print(f"Erro de configuração JWT: {e}")
-            return None, None, "Erro de configuração no servidor."
+            return None, None, "Erro de configuração no servidor."  # ✅ 3 valores
         except Exception as e:
             print(f"Erro ao gerar JWT: {e}")
-            return None, None, "Falha ao gerar token de autenticação."
+            return None, None, "Falha ao gerar token de autenticação."  # ✅ 3 valores
 
     def _generate_jwt(self, user):
         """Gera um token JWT para um objeto UserDomain."""
@@ -50,10 +49,11 @@ class AuthService:
         if not secret:
             raise ValueError("SENHA_JWT não configurada no ambiente")
         
+        # ✅ CORREÇÃO: Use datetime.utcnow() em vez de datetime.now(timezone.utc)
         payload = {
             "user_id": user.id,
             "email": user.email,
-            "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=12)
+            "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=12)
         }
         return jwt.encode(payload, secret, algorithm="HS256")
 

@@ -68,14 +68,23 @@ class UserService:
         return False
 
     def authenticate_user(self, login_identifier: str, senha: str) -> UserDomain | None:
+        print(f"🔐 Autenticando: {login_identifier}")  # ✅ LOG
+        
         user_model = UserModel.query.filter(
             (UserModel.cnpj == login_identifier) | (UserModel.email == login_identifier)
         ).first()
 
-        if not user_model or user_model.status != "Ativo":
+        if not user_model:
+            print("❌ Usuário não encontrado")
             return None
 
+        if user_model.status != "Ativo":
+            print(f"❌ Usuário não está ativo. Status: {user_model.status}")
+            return None
+
+        # Verifica senha
         if bcrypt.verify(senha, user_model.senha):
+            print(f"✅ Autenticação bem-sucedida para: {user_model.nome}")
             return UserDomain(
                 id=user_model.id,
                 nome=user_model.nome,
@@ -86,6 +95,7 @@ class UserService:
                 status=user_model.status
             )
         
+        print("❌ Senha incorreta")
         return None
 
     def inactivate_user_by_id(self, user_id: int) -> bool:
