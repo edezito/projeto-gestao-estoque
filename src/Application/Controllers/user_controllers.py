@@ -81,7 +81,7 @@ class UserController:
             }), 500
     
     def login(self):
-        # ✅ CORRIGIDO: Removido tratamento manual de OPTIONS - CORS cuida disso
+            
         try:
             data = request.get_json(silent=True)
             if data is None:
