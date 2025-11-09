@@ -1,6 +1,6 @@
 from flask import request, jsonify, Blueprint
 from src.Application.Service.produto_service import ProductService
-from src.auth import token_required
+from src.Application.Service.auth_service import token_required
 
 class ProductController:
     def __init__(self):

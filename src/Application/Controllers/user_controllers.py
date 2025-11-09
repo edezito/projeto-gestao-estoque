@@ -1,6 +1,6 @@
 from flask import request, jsonify, Blueprint
 from src.Application.Service.user_service import UserService
-from src.auth import AuthService, token_required
+from src.Application.Service.auth_service import AuthService
 
 class UserController:
     def __init__(self):
@@ -14,11 +14,6 @@ class UserController:
         self.blueprint.add_url_rule('/register', 'register', self.register_user, methods=['POST'])
         self.blueprint.add_url_rule('/activate', 'activate', self.activate_user, methods=['POST'])
         self.blueprint.add_url_rule('/login', 'login', self.login, methods=['POST'])
-        
-        # ❌ REMOVIDAS - ROTAS PROBLEMÁTICAS QUE NÃO EXISTEM
-        # self.blueprint.add_url_rule('/<int:user_id>', 'get_user_by_id', self.get_profile_by_id, methods=['GET'])
-        # self.blueprint.add_url_rule('/<int:user_id>', 'update_user', self.update_user, methods=['PUT'])
-        # self.blueprint.add_url_rule('/<int:user_id>/inactivate', 'inactivate_user', self.inactivate_user, methods=['POST'])
         
         # ✅ ROTAS DE DEBUG (funcionam)
         self.blueprint.add_url_rule('/list-all', 'list_all_users', self.list_all_users, methods=['GET'])
