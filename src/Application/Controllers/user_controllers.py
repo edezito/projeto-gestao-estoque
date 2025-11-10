@@ -1,8 +1,7 @@
 from flask import request, jsonify, Blueprint
 from src.Application.Service.user_service import UserService
 from src.Application.Service.auth_service import AuthService
-from src.Application.Service.auth_service import token_required
-from flask import current_app
+
 
 
 class UserController:
@@ -17,9 +16,6 @@ class UserController:
         self.blueprint.add_url_rule('/register', 'register', self.register_user, methods=['POST'])
         self.blueprint.add_url_rule('/activate', 'activate', self.activate_user, methods=['POST'])
         self.blueprint.add_url_rule('/login', 'login', self.login, methods=['POST'])
-
-        self.blueprint.add_url_rule('/me', 'update_profile', self.update_profile, methods=['PATCH'])
-        self.blueprint.add_url_rule('/deactivate', 'deactivate_account', self.deactivate_account, methods=['POST'])
 
         # ✅ ROTAS DE DEBUG (funcionam)
         self.blueprint.add_url_rule('/list-all', 'list_all_users', self.list_all_users, methods=['GET'])
@@ -166,41 +162,3 @@ class UserController:
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 
-
-@token_required
-def update_profile(self, current_user):
-    try:
-        data = request.get_json(silent=True) or {}
-        # campos permitidos para atualização via profile
-        allowed = {"nome", "email", "celular"}
-        payload = {k: v for k, v in data.items() if k in allowed}
-
-        if not payload:
-            return jsonify({"erro": "Nenhum campo válido para atualizar."}), 400
-
-        # delega ao service (implementaremos update_user)
-        updated_user = self.user_service.update_user(current_user.id, payload)
-
-        # returned user pode ser UserDomain ou dict
-        user_out = updated_user.to_dict() if hasattr(updated_user, "to_dict") else updated_user
-
-        return jsonify({"mensagem": "Perfil atualizado.", "user": user_out}), 200
-
-    except ValueError as e:
-        return jsonify({"erro": str(e)}), 400
-    except Exception as e:
-        current_app.logger.error(f"Erro update_profile: {e}")
-        return jsonify({"erro": "Erro ao atualizar perfil."}), 500
-
-
-@token_required
-def deactivate_account(self, current_user):
-    try:
-        # delega ao service
-        success = self.user_service.inactivate_user_by_id(current_user.id)
-        if success:
-            return jsonify({"mensagem": "Conta inativada com sucesso."}), 200
-        return jsonify({"erro": "Usuário não encontrado ou já inativo."}), 400
-    except Exception as e:
-        current_app.logger.error(f"Erro deactivate_account: {e}")
-        return jsonify({"erro": "Erro ao inativar conta."}), 500
