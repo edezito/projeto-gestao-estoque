@@ -98,6 +98,40 @@ class UserService:
         print("❌ Senha incorreta")
         return None
 
+
+    def update_user(self, user_id: int, data: dict) -> UserDomain:
+        """
+        Atualiza campos permitidos do usuário e retorna UserDomain atualizado.
+        Campos permitidos: nome, email, celular.
+        """
+        user = UserModel.query.filter_by(id=user_id).first()
+        if not user:
+            raise ValueError("Usuário não encontrado.")
+
+        # validações simples: email/celular podem ter regras extras
+        allowed = {"nome", "email", "celular"}
+        updated = False
+        for key, value in data.items():
+            if key in allowed:
+                setattr(user, key, value)
+                updated = True
+
+        if not updated:
+            raise ValueError("Nenhum campo válido para atualizar.")
+
+        db.session.add(user)
+        db.session.commit()
+
+        return UserDomain(
+            id=user.id,
+            nome=user.nome,
+            cnpj=user.cnpj,
+            email=user.email,
+            celular=user.celular,
+            senha=user.senha,
+            status=user.status
+        )
+
     def inactivate_user_by_id(self, user_id: int) -> bool:
         """
         Inativa um usuário no banco de dados.
