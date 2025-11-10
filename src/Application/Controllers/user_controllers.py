@@ -117,30 +117,36 @@ class UserController:
             print(f"Erro interno no login: {e}")
             return jsonify({"erro": "Erro interno ao tentar fazer login."}), 500
         
-    @token_required        
-    def update_user(self, user_id):
+    @token_required
+    def update_user(self, current_user, user_id):
         try:
+            # 2. ADICIONE ESTA VERIFICAÇÃO DE SEGURANÇA
+            if current_user.get('id') != user_id:
+                return jsonify({"erro": "Acesso não autorizado"}), 403
+
             data = request.get_json(silent=True)
             if data is None:
                 return jsonify({"erro": "JSON inválido"}), 400
 
-            # ✅ VERIFICA se o método update_user existe no service
             if not hasattr(self.user_service, 'update_user'):
                 return jsonify({"erro": "Método update_user não implementado"}), 501
                 
             updated_user = self.user_service.update_user(user_id, data)
             
             if updated_user:
-                # ✅ CONVERTE para dict de forma segura
-                if hasattr(updated_user, 'to_dict'):
-                    user_dict = updated_user.to_dict()
-                elif hasattr(updated_user, '__dict__'):
-                    user_dict = updated_user.__dict__
-                    # Remove atributos internos do SQLAlchemy se existirem
-                    user_dict.pop('_sa_instance_state', None)
+                if hasattr(updated_user, 'to_dict_auth'):
+                     user_dict = updated_user.to_dict_auth()
                 else:
-                    user_dict = str(updated_user)
-                    
+                     # Fallback para o UserDomain padrão
+                     user_dict = {
+                         "id": updated_user.id,
+                         "nome": updated_user.nome,
+                         "email": updated_user.email,
+                         "cnpj": updated_user.cnpj,
+                         "celular": updated_user.celular,
+                         "status": updated_user.status
+                     }
+                     
                 return jsonify({"usuario": user_dict}), 200
             else:
                 return jsonify({"erro": "Usuário não encontrado"}), 404
@@ -153,10 +159,10 @@ class UserController:
             return jsonify({"erro": f"Erro interno ao atualizar usuário: {e}"}), 500
 
     @token_required
-    def inactivate_user(self, user_id):
-        # AQUI: Adicione sua lógica de verificação de token (ex: @self.auth_service.token_required)
-        try:
-            # Supondo que seu user_service tenha um método `inactivate_user`
+    def inactivate_user(self, current_user, user_id):
+            if current_user.get('id') != user_id:
+                return jsonify({"erro": "Acesso não autorizado"}), 403
+                
             success = self.user_service.inactivate_user(user_id)
             
             if success:
