@@ -1,6 +1,6 @@
 from flask import request, jsonify, Blueprint
 from src.Application.Service.user_service import UserService
-from src.Application.Service.auth_service import AuthService
+from src.Application.Service.auth_service import AuthService, token_required
 
 
 
@@ -16,6 +16,9 @@ class UserController:
         self.blueprint.add_url_rule('/register', 'register', self.register_user, methods=['POST'])
         self.blueprint.add_url_rule('/activate', 'activate', self.activate_user, methods=['POST'])
         self.blueprint.add_url_rule('/login', 'login', self.login, methods=['POST'])
+
+        self.blueprint.add_url_rule('/<int:user_id>', 'update_user', self.update_user, methods=['PUT'])
+        self.blueprint.add_url_rule('/<int:user_id>', 'delete_user', self.inactivate_user, methods=['DELETE'])
 
         # ✅ ROTAS DE DEBUG (funcionam)
         self.blueprint.add_url_rule('/list-all', 'list_all_users', self.list_all_users, methods=['GET'])
@@ -113,6 +116,47 @@ class UserController:
         except Exception as e:
             print(f"Erro interno no login: {e}")
             return jsonify({"erro": "Erro interno ao tentar fazer login."}), 500
+        
+    @token_required        
+    def update_user(self, user_id):
+        # AQUI: Adicione sua lógica de verificação de token (ex: @self.auth_service.token_required)
+        try:
+            data = request.get_json(silent=True)
+            if data is None:
+                return jsonify({"erro": "JSON inválido"}), 400
+
+            # Supondo que seu user_service tenha um método `update_user`
+            updated_user = self.user_service.update_user(user_id, data)
+            
+            if updated_user:
+                # Retorna o usuário atualizado, como o frontend espera em `onSuccess`
+                return jsonify({"usuario": updated_user.to_dict()}), 200
+            else:
+                return jsonify({"erro": "Usuário não encontrado"}), 404
+
+        except ValueError as e:
+            return jsonify({"erro": str(e)}), 400
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return jsonify({"erro": f"Erro interno ao atualizar usuário: {e}"}), 500
+
+    @token_required
+    def inactivate_user(self, user_id):
+        # AQUI: Adicione sua lógica de verificação de token (ex: @self.auth_service.token_required)
+        try:
+            # Supondo que seu user_service tenha um método `inactivate_user`
+            success = self.user_service.inactivate_user(user_id)
+            
+            if success:
+                return jsonify({"mensagem": "Conta inativada com sucesso"}), 200
+            else:
+                return jsonify({"erro": "Usuário não encontrado"}), 404
+
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return jsonify({"erro": f"Erro interno ao inativar conta: {e}"}), 500
 
     # ✅ NOVAS ROTAS DE DEBUG
     def list_all_users(self):

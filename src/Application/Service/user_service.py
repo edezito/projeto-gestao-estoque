@@ -98,8 +98,37 @@ class UserService:
         print("❌ Senha incorreta")
         return None
 
+    def update_user(self, user_id: int, data: dict) -> UserDomain | None:
+        """
+        Atualiza um usuário no banco de dados.
+        Retorna o objeto UserDomain atualizado ou None se não for encontrado.
+        """
+        user_model = UserModel.query.filter_by(id=user_id).first()
 
-    def inactivate_user_by_id(self, user_id: int) -> bool:
+        if not user_model:
+            return None
+
+        if 'nome' in data:
+            user_model.nome = data['nome']
+        if 'email' in data:
+            user_model.email = data['email']
+        if 'celular' in data:
+            user_model.celular = data['celular']
+        
+        db.session.commit()
+
+        # Retorna o objeto UserDomain atualizado, como o controller espera
+        return UserDomain(
+            id=user_model.id,
+            nome=user_model.nome,
+            cnpj=user_model.cnpj,
+            email=user_model.email,
+            celular=user_model.celular,
+            senha=user_model.senha, # O hash (não será usado)
+            status=user_model.status
+        )
+
+    def inactivate_user(self, user_id: int) -> bool:
         """
         Inativa um usuário no banco de dados.
         Retorna True se o usuário foi inativado ou False caso contrário.
@@ -108,11 +137,9 @@ class UserService:
 
         if user and user.status == "Ativo":
             user.status = "Inativo"
-            # Opcional: Você pode limpar o código de ativação se ele ainda existir
-            user.codigo_ativacao = None
+            user.codigo_ativacao = None # Opcional, mas limpa o código
             db.session.commit()
             return True
         
         # Retorna False se o usuário não for encontrado ou já estiver inativo
         return False
-
