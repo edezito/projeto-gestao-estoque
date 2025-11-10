@@ -1,8 +1,7 @@
 from flask import request, jsonify, Blueprint
 from src.Application.Service.user_service import UserService
 from src.Application.Service.auth_service import AuthService, token_required
-
-
+import traceback # ✅ Importado no topo para uso geral
 
 class UserController:
     def __init__(self):
@@ -12,15 +11,16 @@ class UserController:
         self._register_routes()
 
     def _register_routes(self):
-        # ✅ ROTAS PRINCIPAIS - APENAS AS QUE EXISTEM
+        # ✅ ROTAS PRINCIPAIS
         self.blueprint.add_url_rule('/register', 'register', self.register_user, methods=['POST'])
         self.blueprint.add_url_rule('/activate', 'activate', self.activate_user, methods=['POST'])
         self.blueprint.add_url_rule('/login', 'login', self.login, methods=['POST'])
 
+        # Rotas autenticadas
         self.blueprint.add_url_rule('/<int:user_id>', 'update_user', self.update_user, methods=['PUT'])
         self.blueprint.add_url_rule('/<int:user_id>', 'delete_user', self.inactivate_user, methods=['DELETE'])
 
-        # ✅ ROTAS DE DEBUG (funcionam)
+        # ✅ ROTAS DE DEBUG
         self.blueprint.add_url_rule('/list-all', 'list_all_users', self.list_all_users, methods=['GET'])
         self.blueprint.add_url_rule('/get-activation-code/<string:cnpj>', 'get_activation_code', self.get_activation_code, methods=['GET'])
 
@@ -54,7 +54,6 @@ class UserController:
         except ValueError as e:
             return jsonify({"erro": str(e)}), 409
         except Exception as e:
-            import traceback
             traceback.print_exc()
             return jsonify({"erro": "Erro interno ao cadastrar usuário."}), 500
 
@@ -98,17 +97,15 @@ class UserController:
             if not login_identifier or not senha:
                 return jsonify({"erro": "Login e senha são obrigatórios"}), 400
                 
-            # ✅ AGORA RECEBE 3 VALORES: token, user_data, error_message
             token, user_data, error_message = self.auth_service.authenticate(login_identifier, senha)
 
             if error_message:
                 return jsonify({"erro": error_message}), 401
 
-            # ✅ RETORNA TOKEN E DADOS DO USUÁRIO
             response_data = {
                 "mensagem": "Login bem-sucedido!",
                 "token": token,
-                "user": user_data  # ✅ ADICIONA OS DADOS DO USUÁRIO
+                "user": user_data
             }
 
             return jsonify(response_data), 200
@@ -116,11 +113,11 @@ class UserController:
         except Exception as e:
             print(f"Erro interno no login: {e}")
             return jsonify({"erro": "Erro interno ao tentar fazer login."}), 500
-        
-    @token_required
+            
+    @token_required       
     def update_user(self, current_user, user_id):
         try:
-            # 2. ADICIONE ESTA VERIFICAÇÃO DE SEGURANÇA
+            # Verificação de segurança
             if current_user.get('id') != user_id:
                 return jsonify({"erro": "Acesso não autorizado"}), 403
 
@@ -134,19 +131,19 @@ class UserController:
             updated_user = self.user_service.update_user(user_id, data)
             
             if updated_user:
+                # Converte o UserDomain para um dicionário simples
                 if hasattr(updated_user, 'to_dict_auth'):
-                     user_dict = updated_user.to_dict_auth()
+                       user_dict = updated_user.to_dict_auth()
                 else:
-                     # Fallback para o UserDomain padrão
-                     user_dict = {
-                         "id": updated_user.id,
-                         "nome": updated_user.nome,
-                         "email": updated_user.email,
-                         "cnpj": updated_user.cnpj,
-                         "celular": updated_user.celular,
-                         "status": updated_user.status
-                     }
-                     
+                       # Fallback para o UserDomain padrão
+                       user_dict = {
+                           "id": updated_user.id,
+                           "nome": updated_user.nome,
+                           "email": updated_user.email,
+                           "cnpj": updated_user.cnpj,
+                           "celular": updated_user.celular,
+                           "status": updated_user.status
+                       }
                 return jsonify({"usuario": user_dict}), 200
             else:
                 return jsonify({"erro": "Usuário não encontrado"}), 404
@@ -154,12 +151,13 @@ class UserController:
         except ValueError as e:
             return jsonify({"erro": str(e)}), 400
         except Exception as e:
-            import traceback
             traceback.print_exc()
             return jsonify({"erro": f"Erro interno ao atualizar usuário: {e}"}), 500
 
     @token_required
     def inactivate_user(self, current_user, user_id):
+        try: # <-- ✅ ESTE 'try' ESTAVA FALTANDO
+            # Verificação de segurança
             if current_user.get('id') != user_id:
                 return jsonify({"erro": "Acesso não autorizado"}), 403
                 
@@ -170,12 +168,11 @@ class UserController:
             else:
                 return jsonify({"erro": "Usuário não encontrado"}), 404
 
-        except Exception as e:
-            import traceback
+        except Exception as e: # <-- ✅ Este bloco agora está indentado corretamente
             traceback.print_exc()
             return jsonify({"erro": f"Erro interno ao inativar conta: {e}"}), 500
 
-    # ✅ NOVAS ROTAS DE DEBUG
+    # ✅ ROTAS DE DEBUG
     def list_all_users(self):
         """Lista todos os usuários (para debug)"""
         try:
@@ -222,4 +219,3 @@ class UserController:
                 
         except Exception as e:
             return jsonify({'error': str(e)}), 500
-
