@@ -119,18 +119,29 @@ class UserController:
         
     @token_required        
     def update_user(self, user_id):
-        # AQUI: Adicione sua lógica de verificação de token (ex: @self.auth_service.token_required)
         try:
             data = request.get_json(silent=True)
             if data is None:
                 return jsonify({"erro": "JSON inválido"}), 400
 
-            # Supondo que seu user_service tenha um método `update_user`
+            # ✅ VERIFICA se o método update_user existe no service
+            if not hasattr(self.user_service, 'update_user'):
+                return jsonify({"erro": "Método update_user não implementado"}), 501
+                
             updated_user = self.user_service.update_user(user_id, data)
             
             if updated_user:
-                # Retorna o usuário atualizado, como o frontend espera em `onSuccess`
-                return jsonify({"usuario": updated_user.to_dict()}), 200
+                # ✅ CONVERTE para dict de forma segura
+                if hasattr(updated_user, 'to_dict'):
+                    user_dict = updated_user.to_dict()
+                elif hasattr(updated_user, '__dict__'):
+                    user_dict = updated_user.__dict__
+                    # Remove atributos internos do SQLAlchemy se existirem
+                    user_dict.pop('_sa_instance_state', None)
+                else:
+                    user_dict = str(updated_user)
+                    
+                return jsonify({"usuario": user_dict}), 200
             else:
                 return jsonify({"erro": "Usuário não encontrado"}), 404
 

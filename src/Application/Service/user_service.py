@@ -98,35 +98,34 @@ class UserService:
         print("❌ Senha incorreta")
         return None
 
-    def update_user(self, user_id: int, data: dict) -> UserDomain | None:
-        """
-        Atualiza um usuário no banco de dados.
-        Retorna o objeto UserDomain atualizado ou None se não for encontrado.
-        """
-        user_model = UserModel.query.filter_by(id=user_id).first()
-
-        if not user_model:
-            return None
-
-        if 'nome' in data:
-            user_model.nome = data['nome']
-        if 'email' in data:
-            user_model.email = data['email']
-        if 'celular' in data:
-            user_model.celular = data['celular']
-        
-        db.session.commit()
-
-        # Retorna o objeto UserDomain atualizado, como o controller espera
-        return UserDomain(
-            id=user_model.id,
-            nome=user_model.nome,
-            cnpj=user_model.cnpj,
-            email=user_model.email,
-            celular=user_model.celular,
-            senha=user_model.senha, # O hash (não será usado)
-            status=user_model.status
-        )
+    def update_user(self, user_id, update_data):
+        try:
+            from src.Infrastructure.Model.user import UserModel
+            
+            user = UserModel.query.get(user_id)
+            if not user:
+                return None
+                
+            # Campos permitidos para atualização
+            allowed_fields = ['nome', 'email', 'celular', 'senha']
+            
+            for field in allowed_fields:
+                if field in update_data and update_data[field] is not None:
+                    if field == 'senha':
+                        # Se for atualizar senha, faz o hash
+                        from werkzeug.security import generate_password_hash
+                        setattr(user, field, generate_password_hash(update_data[field]))
+                    else:
+                        setattr(user, field, update_data[field])
+            
+            from src.Infrastructure.Database.db import db
+            db.session.commit()
+            
+            return user
+            
+        except Exception as e:
+            db.session.rollback()
+            raise e
 
     def inactivate_user(self, user_id: int) -> bool:
         """
