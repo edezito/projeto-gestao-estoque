@@ -1,7 +1,7 @@
 from flask import request, jsonify, Blueprint
 from src.Application.Service.user_service import UserService
 from src.Application.Service.auth_service import AuthService, token_required
-import traceback # ✅ Importado no topo para uso geral
+import traceback
 
 class UserController:
     def __init__(self):
@@ -117,8 +117,8 @@ class UserController:
     @token_required       
     def update_user(self, current_user, user_id):
         try:
-            # Verificação de segurança
-            if current_user.get('id') != user_id:
+            # ✅ CORREÇÃO: Acessa 'current_user.id' diretamente
+            if current_user.id != user_id:
                 return jsonify({"erro": "Acesso não autorizado"}), 403
 
             data = request.get_json(silent=True)
@@ -156,10 +156,9 @@ class UserController:
 
     @token_required
     def inactivate_user(self, current_user, user_id):
-        # O 'try' AQUI É O QUE CAUSA O ERRO QUANDO FALTAVA
         try: 
-            # Verificação de segurança
-            if current_user.get('id') != user_id:
+            # ✅ CORREÇÃO: Acessa 'current_user.id' diretamente
+            if current_user.id != user_id:
                 return jsonify({"erro": "Acesso não autorizado"}), 403
                 
             success = self.user_service.inactivate_user(user_id)
@@ -169,7 +168,6 @@ class UserController:
             else:
                 return jsonify({"erro": "Usuário não encontrado"}), 404
 
-        # ESTE 'except' ESTÁ AGORA ALINHADO CORRETAMENTE COM O 'try'
         except Exception as e: 
             traceback.print_exc()
             return jsonify({"erro": f"Erro interno ao inativar conta: {e}"}), 500
