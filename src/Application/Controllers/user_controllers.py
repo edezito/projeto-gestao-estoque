@@ -156,7 +156,8 @@ class UserController:
 
     @token_required
     def inactivate_user(self, current_user, user_id):
-        try: # <-- ✅ ESTE 'try' ESTAVA FALTANDO
+        # O 'try' AQUI É O QUE CAUSA O ERRO QUANDO FALTAVA
+        try: 
             # Verificação de segurança
             if current_user.get('id') != user_id:
                 return jsonify({"erro": "Acesso não autorizado"}), 403
@@ -168,7 +169,8 @@ class UserController:
             else:
                 return jsonify({"erro": "Usuário não encontrado"}), 404
 
-        except Exception as e: # <-- ✅ Este bloco agora está indentado corretamente
+        # ESTE 'except' ESTÁ AGORA ALINHADO CORRETAMENTE COM O 'try'
+        except Exception as e: 
             traceback.print_exc()
             return jsonify({"erro": f"Erro interno ao inativar conta: {e}"}), 500
 
