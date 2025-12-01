@@ -160,3 +160,5 @@ class VendaService:
             created_at=model.created_at,
             produto_details=produto_details
         )
+
+    def
